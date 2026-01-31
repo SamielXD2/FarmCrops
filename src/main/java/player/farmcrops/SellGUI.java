@@ -1,12 +1,14 @@
 package player.farmcrops;
 
-import org.bukkit.*;
-import org.bukkit.entity.HumanEntity;
+import net.milkbowl.vault.economy.Economy;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -14,234 +16,253 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SellGUI implements Listener {
 
     private final FarmCrops plugin;
-
-    // Title the GUI inventory uses — we match on this to know if a click is inside our GUI
-    public static final String GUI_TITLE = ChatColor.DARK_GREEN + "FarmCrops — Sell Crops";
-
-    // Slots for the buttons (bottom row of a 54-slot chest)
-    private static final int SLOT_SELL_ALL  = 49; // center bottom
-    private static final int SLOT_CLOSE     = 53; // bottom right
+    private final Map<Player, Inventory> playerGUIs = new HashMap<>();
 
     public SellGUI(FarmCrops plugin) {
         this.plugin = plugin;
     }
 
-    // ---------------------------------------------------------------
-    // Opens the sell GUI for the player
-    // ---------------------------------------------------------------
-    public static void openSellGUI(Player player, FarmCrops plugin) {
-        // 54 slots = 6 rows. Top 4 rows (0–44) show crops. Row 5 (45–53) is the button bar.
-        Inventory gui = Bukkit.createInventory(null, 54, GUI_TITLE);
+    public void openGUI(Player player) {
+        Inventory gui = Bukkit.createInventory(null, 54, ChatColor.GREEN + "Sell Crops");
 
-        // --- Fill top rows with the player's farmcrops items ---
-        int slot = 0;
-        double totalValue = 0.0;
-        int totalCount = 0;
-
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (item == null || item.getType().isAir() || !item.hasItemMeta()) continue;
-
-            PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
-            if (!pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) continue;
-
-            // It's one of ours — put it in the GUI (slots 0–44 only)
-            if (slot > 44) break; // GUI full
-
-            gui.setItem(slot, item.clone());
-            slot++;
-
-            // Tally up value
-            double weight = pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
-            String tier   = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
-            double basePrice      = plugin.getConfig().getDouble("prices.default", 1.0);
-            double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
-            totalValue += basePrice * tierMultiplier * weight * item.getAmount();
-            totalCount += item.getAmount();
+        // Fill bottom row with glass panes
+        ItemStack grayGlass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta glassMeta = grayGlass.getItemMeta();
+        if (glassMeta != null) {
+            glassMeta.setDisplayName(" ");
+            grayGlass.setItemMeta(glassMeta);
         }
 
-        // --- Fill remaining crop slots with glass panes (visual filler) ---
-        ItemStack filler = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta fillerMeta = filler.getItemMeta();
-        fillerMeta.setDisplayName(" ");
-        filler.setItemMeta(fillerMeta);
-
-        for (int i = slot; i <= 44; i++) {
-            gui.setItem(i, filler);
+        for (int i = 45; i < 54; i++) {
+            gui.setItem(i, grayGlass);
         }
 
-        // --- Bottom row: buttons ---
-        // Filler for bottom row background
-        ItemStack bottomFiller = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
-        ItemMeta bfMeta = bottomFiller.getItemMeta();
-        bfMeta.setDisplayName(" ");
-        bottomFiller.setItemMeta(bfMeta);
-        for (int i = 45; i <= 53; i++) {
-            gui.setItem(i, bottomFiller);
+        // Add player's crops to top 4 rows
+        loadPlayerCrops(player, gui);
+
+        // Create "Sell All" button
+        ItemStack sellAllButton = new ItemStack(Material.EMERALD_BLOCK);
+        ItemMeta sellMeta = sellAllButton.getItemMeta();
+        if (sellMeta != null) {
+            sellMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "SELL ALL");
+            
+            double totalValue = calculateTotalValue(gui);
+            int totalItems = countTotalCrops(gui);
+            
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + "Click to sell all crops");
+            lore.add("");
+            lore.add(ChatColor.YELLOW + "Total Items: " + ChatColor.WHITE + totalItems);
+            lore.add(ChatColor.YELLOW + "Total Value: " + ChatColor.GOLD + "$" + String.format("%.2f", totalValue));
+            sellMeta.setLore(lore);
+            
+            sellAllButton.setItemMeta(sellMeta);
         }
+        gui.setItem(49, sellAllButton);
 
-        // Sell All button
-        ItemStack sellAllBtn = new ItemStack(Material.LIME_CONCRETE);
-        ItemMeta sellMeta = sellAllBtn.getItemMeta();
-        sellMeta.setDisplayName(ChatColor.GREEN + "Sell All Crops");
-        List<String> sellLore = new ArrayList<>();
-        sellLore.add(ChatColor.GRAY + "Total crops: " + ChatColor.WHITE + totalCount);
-        sellLore.add(ChatColor.GRAY + "Total value: " + ChatColor.GOLD + "$" + String.format("%.2f", totalValue));
-        sellLore.add("");
-        sellLore.add(ChatColor.YELLOW + "Click to sell everything!");
-        sellMeta.setLore(sellLore);
-        sellAllBtn.setItemMeta(sellMeta);
-        gui.setItem(SLOT_SELL_ALL, sellAllBtn);
+        // Create "Close" button
+        ItemStack closeButton = new ItemStack(Material.BARRIER);
+        ItemMeta closeMeta = closeButton.getItemMeta();
+        if (closeMeta != null) {
+            closeMeta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "CLOSE");
+            closeButton.setItemMeta(closeMeta);
+        }
+        gui.setItem(53, closeButton);
 
-        // Close button
-        ItemStack closeBtn = new ItemStack(Material.RED_CONCRETE);
-        ItemMeta closeMeta = closeBtn.getItemMeta();
-        closeMeta.setDisplayName(ChatColor.RED + "Close");
-        closeBtn.setItemMeta(closeMeta);
-        gui.setItem(SLOT_CLOSE, closeBtn);
-
+        playerGUIs.put(player, gui);
         player.openInventory(gui);
     }
 
-    // ---------------------------------------------------------------
-    // Click handler
-    // ---------------------------------------------------------------
-    @EventHandler
-    public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getPlayer() instanceof Player)) return;
-
-        // Check if this click is inside our GUI
-        if (!event.getInventory().getName().equals(GUI_TITLE)) return;
-
-        event.setCancelled(true); // Block all normal interactions in this GUI
-        Player player = (Player) event.getPlayer();
-        int slot = event.getRawSlot();
-
-        if (slot == SLOT_SELL_ALL) {
-            sellAll(player);
-        } else if (slot == SLOT_CLOSE) {
-            player.closeInventory();
-        } else if (slot >= 0 && slot <= 44) {
-            // Clicked on a crop in the GUI — sell just that one
-            ItemStack clicked = event.getInventory().getItem(slot);
-            if (clicked == null || clicked.getType().isAir()) return;
-            if (!clicked.hasItemMeta()) return;
-
-            PersistentDataContainer pdc = clicked.getItemMeta().getPersistentDataContainer();
-            if (!pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) return;
-
-            double weight = pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
-            String tier   = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
-            double basePrice      = plugin.getConfig().getDouble("prices.default", 1.0);
-            double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
-            double itemValue      = basePrice * tierMultiplier * weight * clicked.getAmount();
-
-            // Pay and remove from GUI
-            plugin.getEconomy().depositPlayer(player, itemValue);
-            event.getInventory().setItem(slot, filler());
-
-            // Also remove from player's actual inventory
-            removeFromPlayerInventory(player, clicked);
-
-            String currency = plugin.getEconomy().currencyNamePlural();
-            player.sendMessage(ChatColor.GREEN + "Sold " + ChatColor.WHITE + clicked.getAmount()
-                    + "x " + CropListener.capitalize(tier) + " crop"
-                    + ChatColor.GREEN + " for " + ChatColor.GOLD + "$" + String.format("%.2f", itemValue)
-                    + " " + currency);
-
-            // Refresh the GUI so the sell all button totals update
-            player.closeInventory();
-            openSellGUI(player, plugin);
+    private void loadPlayerCrops(Player player, Inventory gui) {
+        int slot = 0;
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (slot >= 45) break; // Only use top 4 rows (45 slots)
+            
+            if (item != null && !item.getType().isAir() && item.hasItemMeta()) {
+                PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+                if (pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) {
+                    gui.setItem(slot++, item.clone());
+                }
+            }
         }
     }
 
-    // ---------------------------------------------------------------
-    // Sell all crops at once
-    // ---------------------------------------------------------------
-    private void sellAll(Player player) {
-        double totalEarnings = 0.0;
-        int totalItems = 0;
-
-        ItemStack[] contents = player.getInventory().getContents();
-        for (int i = 0; i < contents.length; i++) {
-            ItemStack item = contents[i];
+    private double calculateTotalValue(Inventory gui) {
+        double total = 0.0;
+        
+        for (int i = 0; i < 45; i++) {
+            ItemStack item = gui.getItem(i);
             if (item == null || item.getType().isAir() || !item.hasItemMeta()) continue;
 
             PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
             if (!pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) continue;
 
             double weight = pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
-            String tier   = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
-            double basePrice      = plugin.getConfig().getDouble("prices.default", 1.0);
+            String tier = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
+
+            double basePrice = plugin.getConfig().getDouble("prices.default", 1.0);
+            double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
+
+            total += basePrice * tierMultiplier * weight * item.getAmount();
+        }
+
+        return total;
+    }
+
+    private int countTotalCrops(Inventory gui) {
+        int count = 0;
+        for (int i = 0; i < 45; i++) {
+            ItemStack item = gui.getItem(i);
+            if (item != null && !item.getType().isAir() && item.hasItemMeta()) {
+                PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+                if (pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) {
+                    count += item.getAmount();
+                }
+            }
+        }
+        return count;
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player)) return;
+        Player player = (Player) event.getWhoClicked();
+
+        // Check if this is our GUI
+        if (!playerGUIs.containsKey(player)) return;
+        Inventory gui = playerGUIs.get(player);
+        
+        // Use view title for Paper 1.21+
+        if (!event.getView().title().equals(net.kyori.adventure.text.Component.text(ChatColor.GREEN + "Sell Crops"))) {
+            return;
+        }
+
+        event.setCancelled(true);
+
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked == null || clicked.getType().isAir()) return;
+
+        int slot = event.getSlot();
+
+        // Handle "Sell All" button
+        if (slot == 49 && clicked.getType() == Material.EMERALD_BLOCK) {
+            sellAllCrops(player, gui);
+            return;
+        }
+
+        // Handle "Close" button
+        if (slot == 53 && clicked.getType() == Material.BARRIER) {
+            returnCropsToPlayer(player, gui);
+            player.closeInventory();
+            playerGUIs.remove(player);
+            return;
+        }
+
+        // Handle individual crop click (sell single item)
+        if (slot < 45 && clicked.hasItemMeta()) {
+            PersistentDataContainer pdc = clicked.getItemMeta().getPersistentDataContainer();
+            if (pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) {
+                sellSingleCrop(player, gui, slot, clicked);
+            }
+        }
+    }
+
+    private void sellSingleCrop(Player player, Inventory gui, int slot, ItemStack crop) {
+        PersistentDataContainer pdc = crop.getItemMeta().getPersistentDataContainer();
+        double weight = pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
+        String tier = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
+
+        double basePrice = plugin.getConfig().getDouble("prices.default", 1.0);
+        double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
+        double value = basePrice * tierMultiplier * weight * crop.getAmount();
+
+        Economy economy = plugin.getEconomy();
+        economy.depositPlayer(player, value);
+
+        gui.setItem(slot, null);
+        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+        player.sendMessage(ChatColor.GREEN + "Sold " + crop.getAmount() + "x " + 
+                          crop.getItemMeta().getDisplayName() + ChatColor.GREEN + " for " + 
+                          ChatColor.GOLD + "$" + String.format("%.2f", value));
+
+        // Refresh the GUI's sell all button
+        refreshSellAllButton(player, gui);
+    }
+
+    private void sellAllCrops(Player player, Inventory gui) {
+        double totalEarnings = 0.0;
+        int totalItems = 0;
+
+        for (int i = 0; i < 45; i++) {
+            ItemStack item = gui.getItem(i);
+            if (item == null || item.getType().isAir() || !item.hasItemMeta()) continue;
+
+            PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+            if (!pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) continue;
+
+            double weight = pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
+            String tier = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
+
+            double basePrice = plugin.getConfig().getDouble("prices.default", 1.0);
             double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
 
             totalEarnings += basePrice * tierMultiplier * weight * item.getAmount();
             totalItems += item.getAmount();
 
-            player.getInventory().setItem(i, null);
+            gui.setItem(i, null);
         }
 
         if (totalItems == 0) {
             player.sendMessage(ChatColor.RED + "You have no crops to sell!");
-            player.closeInventory();
             return;
         }
 
-        plugin.getEconomy().depositPlayer(player, totalEarnings);
+        Economy economy = plugin.getEconomy();
+        economy.depositPlayer(player, totalEarnings);
 
-        String currency = plugin.getEconomy().currencyNamePlural();
-        player.sendMessage(ChatColor.GREEN + "Sold " + ChatColor.WHITE + totalItems
-                + " crop(s)" + ChatColor.GREEN + " for " + ChatColor.GOLD + "$"
-                + String.format("%.2f", totalEarnings) + " " + currency);
-
-        plugin.getLogger().info(player.getName() + " sold " + totalItems + " crops for $"
-                + String.format("%.2f", totalEarnings));
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
+        player.sendMessage(ChatColor.GREEN + "Sold " + totalItems + " crop(s) for " + 
+                          ChatColor.GOLD + "$" + String.format("%.2f", totalEarnings) + ChatColor.GREEN + "!");
 
         player.closeInventory();
+        playerGUIs.remove(player);
     }
 
-    // ---------------------------------------------------------------
-    // Utility
-    // ---------------------------------------------------------------
-    private ItemStack filler() {
-        ItemStack f = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-        ItemMeta m = f.getItemMeta();
-        m.setDisplayName(" ");
-        f.setItemMeta(m);
-        return f;
+    private void refreshSellAllButton(Player player, Inventory gui) {
+        ItemStack sellAllButton = new ItemStack(Material.EMERALD_BLOCK);
+        ItemMeta sellMeta = sellAllButton.getItemMeta();
+        if (sellMeta != null) {
+            sellMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "SELL ALL");
+            
+            double totalValue = calculateTotalValue(gui);
+            int totalItems = countTotalCrops(gui);
+            
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + "Click to sell all crops");
+            lore.add("");
+            lore.add(ChatColor.YELLOW + "Total Items: " + ChatColor.WHITE + totalItems);
+            lore.add(ChatColor.YELLOW + "Total Value: " + ChatColor.GOLD + "$" + String.format("%.2f", totalValue));
+            sellMeta.setLore(lore);
+            
+            sellAllButton.setItemMeta(sellMeta);
+        }
+        gui.setItem(49, sellAllButton);
     }
 
-    private void removeFromPlayerInventory(Player player, ItemStack guiItem) {
-        // Match by PDC data to find and remove the exact item from the real inventory
-        ItemStack[] contents = player.getInventory().getContents();
-        for (int i = 0; i < contents.length; i++) {
-            ItemStack item = contents[i];
-            if (item == null || !item.hasItemMeta()) continue;
-            if (item.getItemMeta().getPersistentDataContainer()
-                    .has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) {
-
-                double realWeight = item.getItemMeta().getPersistentDataContainer()
-                        .get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
-                double guiWeight  = guiItem.getItemMeta().getPersistentDataContainer()
-                        .get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
-
-                String realTier = item.getItemMeta().getPersistentDataContainer()
-                        .getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
-                String guiTier  = guiItem.getItemMeta().getPersistentDataContainer()
-                        .getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
-
-                // Match on weight + tier + material
-                if (realWeight == guiWeight && realTier.equals(guiTier) && item.getType() == guiItem.getType()) {
-                    player.getInventory().setItem(i, null);
-                    return;
-                }
+    private void returnCropsToPlayer(Player player, Inventory gui) {
+        for (int i = 0; i < 45; i++) {
+            ItemStack item = gui.getItem(i);
+            if (item != null && !item.getType().isAir()) {
+                player.getInventory().addItem(item);
             }
         }
     }
-  }
-  
+    }
+                
