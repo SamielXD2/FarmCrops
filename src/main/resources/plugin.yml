@@ -1,6 +1,6 @@
 name: FarmCrops
 version: '0.4.0'
-description: Adds EvenMoreFish-style weight-based pricing to crops.
+description: Weight-based crop economy system with tier progression
 main: player.farmcrops.FarmCrops
 api-version: '1.21'
 author: Player
@@ -12,7 +12,8 @@ softdepend:
 
 commands:
   sellcrops:
-    description: Sells all custom crops in your inventory based on their weight and tier.
+    description: Opens sell GUI to sell custom crops
     usage: /<command>
+    aliases: [fcs, sps, sellproduce]
     permission: farmcrops.sell
     permission-message: You don't have permission to sell crops.
