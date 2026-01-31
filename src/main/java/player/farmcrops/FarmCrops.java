@@ -1,6 +1,6 @@
 package player.farmcrops;
 
-import net.milkman.vault.economy.Economy;
+import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.plugin.RegisteredServiceProvider;
 
@@ -43,7 +43,7 @@ public class FarmCrops extends JavaPlugin {
         if (getServer().getPluginManager().getPlugin("Vault") == null) {
             return false;
         }
-        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getProvider(Economy.class);
+        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
         if (rsp == null) {
             return false;
         }
@@ -59,4 +59,4 @@ public class FarmCrops extends JavaPlugin {
     public Economy getEconomy() {
         return economy;
     }
-    }
+}
