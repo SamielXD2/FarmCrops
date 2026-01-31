@@ -6,7 +6,7 @@
 
     <groupId>player</groupId>
     <artifactId>FarmCrops</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -27,7 +27,6 @@
     </repositories>
 
     <dependencies>
-        <!-- Spigot API -->
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
@@ -35,7 +34,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- Vault API -->
         <dependency>
             <groupId>com.github.MilkBowl</groupId>
             <artifactId>VaultAPI</artifactId>
@@ -45,18 +43,6 @@
     </dependencies>
 
     <build>
-        <finalName>FarmCrops</finalName>
-        <defaultGoal>clean package</defaultGoal>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                </configuration>
-            </plugin>
-        </plugins>
+        <finalName>${project.artifactId}</finalName>
     </build>
 </project>
