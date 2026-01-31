@@ -8,6 +8,9 @@ public class FarmCrops extends JavaPlugin {
 
     private static FarmCrops instance;
     private Economy economy;
+    private boolean placeholderEnabled = false;
+    private boolean holoEnabled = false;
+    private HoloManager holoManager;
 
     @Override
     public void onEnable() {
@@ -15,7 +18,7 @@ public class FarmCrops extends JavaPlugin {
 
         getLogger().info("========================================");
         getLogger().info("========================================");
-        getLogger().info("       FARMCROPS v1.0.0");
+        getLogger().info("       FARMCROPS v0.4.0");
         getLogger().info("  Weight-Based Crop Economy System");
         getLogger().info("========================================");
         getLogger().info("========================================");
@@ -23,7 +26,7 @@ public class FarmCrops extends JavaPlugin {
         getLogger().info("Starting initialization...");
         getLogger().info("");
 
-        // Load config (creates config.yml on first run)
+        // Load config
         saveDefaultConfig();
         getLogger().info("✓ Configuration file loaded");
         getLogger().info("  - Weight Range: " + getConfig().getDouble("weight.min") + "kg - " + getConfig().getDouble("weight.max") + "kg");
@@ -31,7 +34,7 @@ public class FarmCrops extends JavaPlugin {
         getLogger().info("  - Tier System: 4 tiers configured");
         getLogger().info("");
 
-        // Hook into Vault's economy
+        // Hook Vault
         getLogger().info("Searching for Vault...");
         if (!setupEconomy()) {
             getLogger().severe("========================================");
@@ -51,23 +54,47 @@ public class FarmCrops extends JavaPlugin {
         getLogger().info("  - Economy Provider: " + economy.getName());
         getLogger().info("");
 
-        // Register the harvest listener
+        // Listeners
         getLogger().info("Registering event listeners...");
         getServer().getPluginManager().registerEvents(new CropListener(this), this);
         getLogger().info("✓ Crop harvest listener registered");
         getLogger().info("  - Tracking: Wheat, Carrot, Potato, Beetroot, Melon");
+        getServer().getPluginManager().registerEvents(new SellGUI(this), this);
+        getLogger().info("✓ Sell GUI listener registered");
         getLogger().info("");
 
-        // Register the /sellcrops command
+        // Command
         getLogger().info("Registering commands...");
         getCommand("sellcrops").setExecutor(new SellCommand(this));
-        getLogger().info("✓ /sellcrops command registered");
+        getLogger().info("✓ /sellcrops command registered (opens GUI)");
+        getLogger().info("");
+
+        // PlaceholderAPI (optional)
+        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            new PlaceholderProvider(this).register();
+            placeholderEnabled = true;
+            getLogger().info("✓ PlaceholderAPI hooked!");
+            getLogger().info("  - %farmcrops_price%, %farmcrops_tier%, %farmcrops_weight%, %farmcrops_crop%");
+        } else {
+            getLogger().info("○ PlaceholderAPI not found — skipping (optional)");
+        }
+        getLogger().info("");
+
+        // DecentHolograms (optional)
+        if (getServer().getPluginManager().isPluginEnabled("DecentHolograms")) {
+            holoManager = new HoloManager(this);
+            holoEnabled = true;
+            getLogger().info("✓ DecentHolograms hooked!");
+            getLogger().info("  - Harvest holograms enabled");
+        } else {
+            getLogger().info("○ DecentHolograms not found — skipping (optional)");
+        }
         getLogger().info("");
 
         getLogger().info("========================================");
         getLogger().info("  ✓✓✓ FARMCROPS ENABLED ✓✓✓");
         getLogger().info("========================================");
-        getLogger().info("  Version: 1.0.0");
+        getLogger().info("  Version: 0.4.0");
         getLogger().info("  Author: Player");
         getLogger().info("  All systems operational!");
         getLogger().info("========================================");
@@ -76,32 +103,26 @@ public class FarmCrops extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (holoManager != null) {
+            holoManager.clearAll();
+        }
         getLogger().info("========================================");
-        getLogger().info("  FarmCrops v1.0.0 shutting down...");
+        getLogger().info("  FarmCrops v0.4.0 shutting down...");
         getLogger().info("  Thanks for using FarmCrops!");
         getLogger().info("========================================");
     }
 
-    // --- Vault Setup ---
     private boolean setupEconomy() {
-        if (getServer().getPluginManager().getPlugin("Vault") == null) {
-            return false;
-        }
+        if (getServer().getPluginManager().getPlugin("Vault") == null) return false;
         RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-        if (rsp == null) {
-            return false;
-        }
+        if (rsp == null) return false;
         economy = rsp.getProvider();
         return economy != null;
     }
 
-    // --- Getters ---
-    public static FarmCrops getInstance() {
-        return instance;
-    }
-
-    public Economy getEconomy() {
-        return economy;
-    }
-                }
-            
+    public static FarmCrops getInstance() { return instance; }
+    public Economy getEconomy() { return economy; }
+    public boolean isPlaceholderEnabled() { return placeholderEnabled; }
+    public boolean isHoloEnabled() { return holoEnabled; }
+    public HoloManager getHoloManager() { return holoManager; }
+}
