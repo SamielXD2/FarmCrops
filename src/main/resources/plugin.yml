@@ -1,5 +1,5 @@
 name: FarmCrops
-version: '1.0.0'
+version: '0.4.0'
 description: Adds EvenMoreFish-style weight-based pricing to crops.
 main: player.farmcrops.FarmCrops
 api-version: '1.21'
