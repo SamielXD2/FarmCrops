@@ -91,6 +91,10 @@ public class CropListener implements Listener {
         // --- Cancel the default drop and give our custom item instead ---
         event.setDropItems(false);
         event.getPlayer().getWorld().dropItemNaturally(block.getLocation(), item);
+        
+        // Debug message to console
+        plugin.getLogger().info(event.getPlayer().getName() + " harvested a " + tier + " " 
+                + formatName(block.getType()) + " (" + weight + "kg)");
     }
 
     // ---------------------------------------------------------------
@@ -147,4 +151,4 @@ public class CropListener implements Listener {
         return ChatColor.translateAlternateColorCodes('&', input);
     }
             }
-  
+                
