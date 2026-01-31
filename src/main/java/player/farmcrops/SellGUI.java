@@ -9,6 +9,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -47,31 +48,17 @@ public class SellGUI implements Listener {
         // Add player's crops to top 4 rows
         loadPlayerCrops(player, gui);
 
-        // Create "Sell All" button
-        ItemStack sellAllButton = new ItemStack(Material.EMERALD_BLOCK);
-        ItemMeta sellMeta = sellAllButton.getItemMeta();
-        if (sellMeta != null) {
-            sellMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "SELL ALL");
-            
-            double totalValue = calculateTotalValue(gui);
-            int totalItems = countTotalCrops(gui);
-            
-            List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.GRAY + "Click to sell all crops");
-            lore.add("");
-            lore.add(ChatColor.YELLOW + "Total Items: " + ChatColor.WHITE + totalItems);
-            lore.add(ChatColor.YELLOW + "Total Value: " + ChatColor.GOLD + "$" + String.format("%.2f", totalValue));
-            sellMeta.setLore(lore);
-            
-            sellAllButton.setItemMeta(sellMeta);
-        }
-        gui.setItem(49, sellAllButton);
+        // Update "Sell All" button
+        refreshSellAllButton(gui);
 
         // Create "Close" button
         ItemStack closeButton = new ItemStack(Material.BARRIER);
         ItemMeta closeMeta = closeButton.getItemMeta();
         if (closeMeta != null) {
             closeMeta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "CLOSE");
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + "Returns items to inventory");
+            closeMeta.setLore(lore);
             closeButton.setItemMeta(closeMeta);
         }
         gui.setItem(53, closeButton);
@@ -82,13 +69,19 @@ public class SellGUI implements Listener {
 
     private void loadPlayerCrops(Player player, Inventory gui) {
         int slot = 0;
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (slot >= 45) break; // Only use top 4 rows (45 slots)
+        ItemStack[] contents = player.getInventory().getContents();
+        
+        for (int i = 0; i < contents.length; i++) {
+            if (slot >= 45) break;
             
+            ItemStack item = contents[i];
             if (item != null && !item.getType().isAir() && item.hasItemMeta()) {
                 PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
                 if (pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) {
+                    // Add to GUI
                     gui.setItem(slot++, item.clone());
+                    // CRITICAL: Remove from player inventory to prevent duplication
+                    player.getInventory().setItem(i, null);
                 }
             }
         }
@@ -135,29 +128,42 @@ public class SellGUI implements Listener {
         if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
 
-        // Check if this is our GUI
         if (!playerGUIs.containsKey(player)) return;
-        Inventory gui = playerGUIs.get(player);
         
-        // Use view title for Paper 1.21+
-        if (!event.getView().title().equals(net.kyori.adventure.text.Component.text(ChatColor.GREEN + "Sell Crops"))) {
-            return;
-        }
+        String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+            .serialize(event.getView().title());
+        
+        if (!title.equals("Sell Crops")) return;
 
+        Inventory gui = playerGUIs.get(player);
+
+        // CRITICAL: Cancel ALL clicks to prevent any item manipulation
         event.setCancelled(true);
+
+        // Also block shift-clicking from player inventory
+        if (event.getClickedInventory() != null && 
+            event.getClickedInventory().equals(player.getInventory()) && 
+            event.isShiftClick()) {
+            return; // Don't allow shift-clicking items into the GUI
+        }
 
         ItemStack clicked = event.getCurrentItem();
         if (clicked == null || clicked.getType().isAir()) return;
 
+        // Only handle clicks in the GUI itself, not player inventory
+        if (!event.getClickedInventory().equals(gui)) {
+            return;
+        }
+
         int slot = event.getSlot();
 
-        // Handle "Sell All" button
+        // Sell All button (slot 49)
         if (slot == 49 && clicked.getType() == Material.EMERALD_BLOCK) {
             sellAllCrops(player, gui);
             return;
         }
 
-        // Handle "Close" button
+        // Close button (slot 53)
         if (slot == 53 && clicked.getType() == Material.BARRIER) {
             returnCropsToPlayer(player, gui);
             player.closeInventory();
@@ -165,12 +171,34 @@ public class SellGUI implements Listener {
             return;
         }
 
-        // Handle individual crop click (sell single item)
+        // Bottom row glass panes (45-52, excluding 49) - ignore
+        if (slot >= 45 && slot <= 52 && slot != 49) {
+            return;
+        }
+
+        // Top 4 rows (0-44) - Sell individual crop
         if (slot < 45 && clicked.hasItemMeta()) {
             PersistentDataContainer pdc = clicked.getItemMeta().getPersistentDataContainer();
             if (pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) {
                 sellSingleCrop(player, gui, slot, clicked);
             }
+        }
+    }
+
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (!(event.getPlayer() instanceof Player)) return;
+        Player player = (Player) event.getPlayer();
+
+        if (!playerGUIs.containsKey(player)) return;
+
+        String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
+            .serialize(event.getView().title());
+        
+        if (title.equals("Sell Crops")) {
+            Inventory gui = playerGUIs.get(player);
+            returnCropsToPlayer(player, gui);
+            playerGUIs.remove(player);
         }
     }
 
@@ -192,8 +220,7 @@ public class SellGUI implements Listener {
                           crop.getItemMeta().getDisplayName() + ChatColor.GREEN + " for " + 
                           ChatColor.GOLD + "$" + String.format("%.2f", value));
 
-        // Refresh the GUI's sell all button
-        refreshSellAllButton(player, gui);
+        refreshSellAllButton(gui);
     }
 
     private void sellAllCrops(Player player, Inventory gui) {
@@ -235,7 +262,7 @@ public class SellGUI implements Listener {
         playerGUIs.remove(player);
     }
 
-    private void refreshSellAllButton(Player player, Inventory gui) {
+    private void refreshSellAllButton(Inventory gui) {
         ItemStack sellAllButton = new ItemStack(Material.EMERALD_BLOCK);
         ItemMeta sellMeta = sellAllButton.getItemMeta();
         if (sellMeta != null) {
@@ -260,9 +287,12 @@ public class SellGUI implements Listener {
         for (int i = 0; i < 45; i++) {
             ItemStack item = gui.getItem(i);
             if (item != null && !item.getType().isAir()) {
-                player.getInventory().addItem(item);
+                HashMap<Integer, ItemStack> leftover = player.getInventory().addItem(item);
+                for (ItemStack drop : leftover.values()) {
+                    player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                }
             }
         }
     }
-    }
+                    }
                 
