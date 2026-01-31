@@ -34,14 +34,18 @@ public class CropListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
+        
+        plugin.getLogger().info("DEBUG: Block broken: " + block.getType());
 
         // Only care about crops we're tracking
         if (!isTrackedCrop(block.getType())) {
             return;
         }
+        
+        plugin.getLogger().info("DEBUG: Tracked crop detected!");
 
         // Only intercept FULLY GROWN crops
         if (!(block.getBlockData() instanceof Ageable)) {
@@ -49,8 +53,11 @@ public class CropListener implements Listener {
         }
         Ageable ageable = (Ageable) block.getBlockData();
         if (ageable.getAge() < ageable.getMaximumAge()) {
+            plugin.getLogger().info("DEBUG: Crop not fully grown (age: " + ageable.getAge() + "/" + ageable.getMaximumAge() + ")");
             return; // Not fully grown yet — let normal break happen
         }
+        
+        plugin.getLogger().info("DEBUG: Crop is fully grown! Processing custom drop...");
 
         // --- Read config values ---
         double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
@@ -90,11 +97,14 @@ public class CropListener implements Listener {
 
         // --- Cancel the default drop and give our custom item instead ---
         event.setDropItems(false);
-        event.getPlayer().getWorld().dropItemNaturally(block.getLocation(), item);
+        Location dropLoc = block.getLocation().add(0.5, 0.5, 0.5);
+        event.getPlayer().getWorld().dropItemNaturally(dropLoc, item);
         
         // Debug message to console
-        plugin.getLogger().info(event.getPlayer().getName() + " harvested a " + tier + " " 
-                + formatName(block.getType()) + " (" + weight + "kg)");
+        plugin.getLogger().info("✓ " + event.getPlayer().getName() + " harvested a " + tier.toUpperCase() + " " 
+                + formatName(block.getType()) + " (" + weight + "kg) - Worth: $" 
+                + String.format("%.2f", plugin.getConfig().getDouble("prices.default", 1.0) 
+                * plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0) * weight));
     }
 
     // ---------------------------------------------------------------
@@ -150,5 +160,5 @@ public class CropListener implements Listener {
     private String colorize(String input) {
         return ChatColor.translateAlternateColorCodes('&', input);
     }
-            }
-                
+                     }
+            
