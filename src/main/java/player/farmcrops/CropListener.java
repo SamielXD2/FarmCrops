@@ -3,6 +3,7 @@ package player.farmcrops;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -22,7 +23,6 @@ public class CropListener implements Listener {
 
     public static final NamespacedKey WEIGHT_KEY = new NamespacedKey("farmcrops", "weight");
     public static final NamespacedKey TIER_KEY   = new NamespacedKey("farmcrops", "tier");
-    public static final NamespacedKey CROP_KEY   = new NamespacedKey("farmcrops", "crop");
 
     private static final Material[] TRACKED_CROPS = {
             Material.WHEAT, Material.CARROT, Material.POTATO,
@@ -41,64 +41,61 @@ public class CropListener implements Listener {
 
         if (!(block.getBlockData() instanceof Ageable)) return;
         Ageable ageable = (Ageable) block.getBlockData();
-        if (ageable.getAge() < ageable.getMaximumAge()) return;
+        if (ageable.getAge() < ageable.getMaximumAge()) {
+            return;
+        }
 
-        // --- Read config ---
+        Player player = event.getPlayer();
+        
         double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
         double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
 
-        // --- Roll tier and weight ---
-        String tier   = rollTier();
-        String color  = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
+        String tier  = rollTier();
+        String color = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
+
         double weight = ThreadLocalRandom.current().nextDouble(minWeight, maxWeight);
         weight = Math.round(weight * 100.0) / 100.0;
 
-        // --- Build the item ---
-        Material dropMat = getDropMaterial(block.getType());
-        ItemStack item = new ItemStack(dropMat, 1);
+        ItemStack item = new ItemStack(getDropMaterial(block.getType()), 1);
         ItemMeta meta = item.getItemMeta();
 
         if (meta != null) {
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             pdc.set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
             pdc.set(TIER_KEY,   PersistentDataType.STRING, tier);
-            pdc.set(CROP_KEY,   PersistentDataType.STRING, formatName(block.getType()));
 
-            // Calculate price for lore display
-            double basePrice      = plugin.getConfig().getDouble("prices.default", 1.0);
-            double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
-            double price          = basePrice * tierMultiplier * weight;
-
+            // IMPORTANT: Only show tier in lore, NOT weight
+            // This allows items of same tier to stack together
+            // Weight is still saved in PDC for selling calculations
             List<String> lore = new ArrayList<>();
             lore.add(colorize(color) + "Tier: " + capitalize(tier));
-            lore.add("§7Weight: §f" + weight + " kg");
-            lore.add("§7Price: §a$" + String.format("%.2f", price));
             meta.setLore(lore);
 
             meta.setDisplayName(colorize(color) + capitalize(tier) + " " + formatName(block.getType()));
             item.setItemMeta(meta);
         }
 
-        // --- Cancel default drop, give ours instead ---
         event.setDropItems(false);
         Location dropLoc = block.getLocation().add(0.5, 0.5, 0.5);
         event.getPlayer().getWorld().dropItemNaturally(dropLoc, item);
 
-        // --- Console log (no debug spam) ---
-        double worth = plugin.getConfig().getDouble("prices.default", 1.0)
-                * plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0) * weight;
-        plugin.getLogger().info("✓ " + event.getPlayer().getName() + " harvested " + tier.toUpperCase()
-                + " " + formatName(block.getType()) + " (" + weight + "kg) — $" + String.format("%.2f", worth));
-
-        // --- Hologram flash if DecentHolograms is enabled ---
+        // Show hologram if enabled
         if (plugin.isHoloEnabled()) {
-            plugin.getHoloManager().flashHarvest(block.getLocation(), tier, color, weight, formatName(block.getType()));
+            plugin.getHoloManager().flashHarvest(
+                dropLoc, 
+                player.getName(), 
+                tier, 
+                weight, 
+                formatName(block.getType())
+            );
         }
+
+        double worth = plugin.getConfig().getDouble("prices.default", 10.0)
+            * plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0) * weight;
+        plugin.getLogger().info("✓ " + event.getPlayer().getName() + " harvested " + tier.toUpperCase()
+            + " " + formatName(block.getType()) + " (" + weight + "kg) - Worth: $" + String.format("%.2f", worth));
     }
 
-    // ---------------------------------------------------------------
-    // Tier rolling
-    // ---------------------------------------------------------------
     private String rollTier() {
         int roll = ThreadLocalRandom.current().nextInt(1, 101);
         int common = plugin.getConfig().getInt("tiers.common.chance", 70);
@@ -111,33 +108,18 @@ public class CropListener implements Listener {
         else                                   return "legendary";
     }
 
-    // ---------------------------------------------------------------
-    // Utility
-    // ---------------------------------------------------------------
-    private boolean isTrackedCrop(Material material) {
-        for (Material m : TRACKED_CROPS) {
-            if (m == material) return true;
-        }
+    private boolean isTrackedCrop(Material m) {
+        for (Material t : TRACKED_CROPS) { if (t == m) return true; }
         return false;
     }
 
-    private Material getDropMaterial(Material cropBlock) {
-        if (cropBlock == Material.BEETROOT) return Material.BEETROOT;
-        if (cropBlock == Material.MELON)    return Material.MELON_SLICE;
-        return cropBlock;
+    private Material getDropMaterial(Material crop) {
+        if (crop == Material.BEETROOT) return Material.BEETROOT;
+        if (crop == Material.MELON)    return Material.MELON_SLICE;
+        return crop;
     }
 
-    public static String capitalize(String s) {
-        return s.substring(0, 1).toUpperCase() + s.substring(1);
-    }
-
-    public static String formatName(Material material) {
-        String name = material.name();
-        return name.charAt(0) + name.substring(1).toLowerCase().replace("_", " ");
-    }
-
-    public static String colorize(String input) {
-        return ChatColor.translateAlternateColorCodes('&', input);
-    }
-                }
-        
+    private String capitalize(String s) { return s.substring(0,1).toUpperCase() + s.substring(1); }
+    private String formatName(Material m) { return m.name().charAt(0) + m.name().substring(1).toLowerCase().replace("_"," "); }
+    private String colorize(String s) { return ChatColor.translateAlternateColorCodes('&', s); }
+        }
