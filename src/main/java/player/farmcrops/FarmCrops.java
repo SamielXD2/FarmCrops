@@ -10,6 +10,8 @@ public class FarmCrops extends JavaPlugin {
     private static FarmCrops instance;
     private Economy economy;
     private SellGUI sellGUI;
+    private HoloManager holoManager;
+    private boolean holoEnabled = false;
 
     @Override
     public void onEnable() {
@@ -83,6 +85,18 @@ public class FarmCrops extends JavaPlugin {
             getLogger().info("");
         }
 
+        // Check for DecentHolograms
+        if (Bukkit.getPluginManager().getPlugin("DecentHolograms") != null) {
+            getLogger().info("DecentHolograms found! Initializing hologram system...");
+            holoManager = new HoloManager(this);
+            holoEnabled = true;
+            getLogger().info("✓ DecentHolograms integration active");
+            getLogger().info("");
+        } else {
+            getLogger().info("DecentHolograms not found - hologram support disabled");
+            getLogger().info("");
+        }
+
         getLogger().info("========================================");
         getLogger().info("  ✓✓✓ FARMCROPS ENABLED ✓✓✓");
         getLogger().info("========================================");
@@ -124,5 +138,13 @@ public class FarmCrops extends JavaPlugin {
     
     public SellGUI getSellGUI() {
         return sellGUI;
+    }
+    
+    public boolean isHoloEnabled() {
+        return holoEnabled;
+    }
+    
+    public HoloManager getHoloManager() {
+        return holoManager;
     }
 }
