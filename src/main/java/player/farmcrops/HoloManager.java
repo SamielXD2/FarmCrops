@@ -53,6 +53,40 @@ public class HoloManager {
     }
 
     /**
+     * Flash harvest hologram (alternative method name for compatibility)
+     */
+    public void flashHarvest(Location location, String playerName, String tier, double weight, String cropName) {
+        try {
+            // Create hologram name (unique per location and time)
+            String holoName = "farmcrops_harvest_" + playerName + "_" + System.currentTimeMillis();
+            
+            // Position above the block
+            Location holoLoc = location.clone().add(0.5, 1.5, 0.5);
+            
+            // Get tier color
+            String color = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
+            
+            // Create hologram lines
+            List<String> lines = new ArrayList<>();
+            lines.add(colorize(color + "&l" + capitalize(tier) + " " + cropName));
+            lines.add(colorize("&7Weight: &f" + String.format("%.2f", weight) + " kg"));
+            
+            // Create the hologram using DHAPI
+            Hologram hologram = DHAPI.createHologram(holoName, holoLoc, lines);
+            
+            // Remove after 3 seconds
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                if (hologram != null) {
+                    DHAPI.removeHologram(holoName);
+                }
+            }, 60L); // 60 ticks = 3 seconds
+            
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to create harvest hologram: " + e.getMessage());
+        }
+    }
+
+    /**
      * Display a hologram above a growing crop (optional future feature)
      */
     public void showGrowingCropHologram(Block block, Material cropType, int age, int maxAge) {
