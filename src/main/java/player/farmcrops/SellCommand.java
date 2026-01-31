@@ -16,15 +16,17 @@ public class SellCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+
         if (!(sender instanceof Player)) {
             sender.sendMessage("This command can only be run by a player.");
             return true;
         }
-
+        
         Player player = (Player) sender;
 
-        // Just open the sell GUI now
-        SellGUI.openSellGUI(player, plugin);
+        // Open the sell GUI
+        plugin.getSellGUI().openGUI(player);
+
         return true;
     }
 }
