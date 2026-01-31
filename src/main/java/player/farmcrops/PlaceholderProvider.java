@@ -1,10 +1,11 @@
 package player.farmcrops;
 
-import me.clip.placeholderapi.PlaceholderExpansion;
+import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
 public class PlaceholderProvider extends PlaceholderExpansion {
 
@@ -15,101 +16,108 @@ public class PlaceholderProvider extends PlaceholderExpansion {
     }
 
     @Override
+    @NotNull
     public String getIdentifier() {
         return "farmcrops";
     }
 
     @Override
+    @NotNull
     public String getAuthor() {
         return "Player";
     }
 
     @Override
+    @NotNull
     public String getVersion() {
-        return "0.4.0";
+        return "1.0.0";
     }
 
     @Override
-    public String onPlaceholderRequest(Player player, String placeholder) {
-        // Find the first FarmCrops item the player is holding or has selected
-        // We check the item in the player's main hand first, then off hand
-        ItemStack item = getHeldCropItem(player);
-
-        switch (placeholder.toLowerCase()) {
-            case "price":
-                if (item == null) return "0.00";
-                return String.format("%.2f", calculatePrice(item));
-
-            case "tier":
-                if (item == null) return "None";
-                return CropListener.capitalize(getTier(item));
-
-            case "weight":
-                if (item == null) return "0.00";
-                return String.format("%.2f", getWeight(item));
-
-            case "crop":
-                if (item == null) return "None";
-                return getCropName(item);
-
-            case "tier_multiplier":
-                if (item == null) return "1.00";
-                String tier = getTier(item);
-                return String.format("%.2f", plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0));
-
-            case "base_price":
-                return String.format("%.2f", plugin.getConfig().getDouble("prices.default", 1.0));
-
-            default:
-                return null; // Unknown placeholder
-        }
+    public boolean persist() {
+        return true;
     }
 
-    // ---------------------------------------------------------------
-    // Helpers
-    // ---------------------------------------------------------------
-    private ItemStack getHeldCropItem(Player player) {
-        // Check main hand first
-        ItemStack mainHand = player.getEquipped(org.bukkit.equipment.EquipmentSlot.HAND);
-        if (isFarmCropItem(mainHand)) return mainHand;
+    @Override
+    public String onPlaceholderRequest(Player player, @NotNull String identifier) {
+        if (player == null) {
+            return "";
+        }
 
-        // Then off hand
-        ItemStack offHand = player.getEquipped(org.bukkit.equipment.EquipmentSlot.OFF_HAND);
-        if (isFarmCropItem(offHand)) return offHand;
+        // %farmcrops_price% - Shows sell price of held item
+        if (identifier.equals("price")) {
+            ItemStack item = player.getInventory().getItemInMainHand();
+            if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
+                return "N/A";
+            }
+
+            PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+            if (!pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) {
+                return "N/A";
+            }
+
+            double weight = pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
+            String tier = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
+
+            double basePrice = plugin.getConfig().getDouble("prices.default", 1.0);
+            double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
+            double price = basePrice * tierMultiplier * weight;
+
+            return String.format("%.2f", price);
+        }
+
+        // %farmcrops_tier% - Shows tier of held item
+        if (identifier.equals("tier")) {
+            ItemStack item = player.getInventory().getItemInMainHand();
+            if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
+                return "N/A";
+            }
+
+            PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+            String tier = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, null);
+
+            if (tier == null) {
+                return "N/A";
+            }
+
+            return capitalize(tier);
+        }
+
+        // %farmcrops_weight% - Shows weight of held item
+        if (identifier.equals("weight")) {
+            ItemStack item = player.getInventory().getItemInMainHand();
+            if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
+                return "N/A";
+            }
+
+            PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+            if (!pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) {
+                return "N/A";
+            }
+
+            double weight = pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
+            return String.format("%.2f", weight);
+        }
+
+        // %farmcrops_crop% - Shows crop type of held item
+        if (identifier.equals("crop")) {
+            ItemStack item = player.getInventory().getItemInMainHand();
+            if (item == null || item.getType().isAir()) {
+                return "N/A";
+            }
+
+            return formatName(item.getType());
+        }
 
         return null;
     }
 
-    private boolean isFarmCropItem(ItemStack item) {
-        if (item == null || item.getType().isAir() || !item.hasItemMeta()) return false;
-        return item.getItemMeta().getPersistentDataContainer()
-                .has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
+    private String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return s.substring(0, 1).toUpperCase() + s.substring(1);
     }
 
-    private double getWeight(ItemStack item) {
-        return item.getItemMeta().getPersistentDataContainer()
-                .get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
+    private String formatName(org.bukkit.Material m) {
+        return m.name().charAt(0) + m.name().substring(1).toLowerCase().replace("_", " ");
     }
-
-    private String getTier(ItemStack item) {
-        return item.getItemMeta().getPersistentDataContainer()
-                .getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
-    }
-
-    private String getCropName(ItemStack item) {
-        PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
-        if (pdc.has(CropListener.CROP_KEY, PersistentDataType.STRING)) {
-            return pdc.get(CropListener.CROP_KEY, PersistentDataType.STRING);
-        }
-        // Fallback: derive from material
-        return CropListener.formatName(item.getType());
-    }
-
-    private double calculatePrice(ItemStack item) {
-        double weight        = getWeight(item);
-        String tier          = getTier(item);
-        double basePrice     = plugin.getConfig().getDouble("prices.default", 1.0);
-        double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
-        return basePrice * tierMultiplier * weight;
-    }
-                                       }
+}
