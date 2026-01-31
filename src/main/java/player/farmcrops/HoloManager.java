@@ -1,117 +1,111 @@
 package player.farmcrops;
 
+import eu.decentsoftware.holograms.api.DHAPI;
+import eu.decentsoftware.holograms.api.holograms.Hologram;
 import org.bukkit.Location;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Handles DecentHolograms integration via reflection.
- * This way the plugin compiles fine even without DecentHolograms — it only
- * actually calls DH at runtime when it's confirmed to be loaded.
- */
 public class HoloManager {
 
     private final FarmCrops plugin;
-    private final List<String> activeHoloIds = new ArrayList<>();
-
-    // Cached reflection references
-    private Class<?> holoProviderClass;
-    private Object providerInstance;
-    private Method createMethod;
-    private Method removeMethod;
 
     public HoloManager(FarmCrops plugin) {
         this.plugin = plugin;
-        initReflection();
-    }
-
-    private void initReflection() {
-        try {
-            // DecentHolograms main API class
-            holoProviderClass = Class.forName("com.dg.dg.api.hologram.provider.HologramProvider");
-            Method getInstance = holoProviderClass.getMethod("getInstance");
-            providerInstance = getInstance.invoke(null);
-
-            // createHologram(String id, Location loc, List<String> lines)
-            createMethod = holoProviderClass.getMethod("createHologram", String.class, Location.class, List.class);
-
-            // removeHologram(String id)
-            removeMethod = holoProviderClass.getMethod("removeHologram", String.class);
-
-        } catch (Exception e) {
-            // If reflection fails, try the alternate package name some versions use
-            try {
-                holoProviderClass = Class.forName("com.decent.api.hologram.provider.HologramProvider");
-                Method getInstance = holoProviderClass.getMethod("getInstance");
-                providerInstance = getInstance.invoke(null);
-                createMethod = holoProviderClass.getMethod("createHologram", String.class, Location.class, List.class);
-                removeMethod = holoProviderClass.getMethod("removeHologram", String.class);
-            } catch (Exception e2) {
-                plugin.getLogger().warning("DecentHolograms reflection failed: " + e2.getMessage());
-                plugin.getLogger().warning("Holograms will not work. Check your DecentHolograms version.");
-            }
-        }
     }
 
     /**
-     * Flashes a hologram above a harvest location for 3 seconds.
+     * Display a temporary hologram above a harvested crop showing tier and weight
      */
-    public void flashHarvest(Location loc, String tier, String color, double weight, String cropName) {
-        if (createMethod == null || providerInstance == null) return;
-
-        Location holoLoc = loc.clone().add(0, 1.5, 0);
-        String colorCode = CropListener.colorize(color);
-        String holoId = "farmcrops_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 9999);
-
-        List<String> lines = new ArrayList<>();
-        lines.add(colorCode + CropListener.capitalize(tier) + " " + cropName);
-        lines.add("§7" + weight + " kg");
-        lines.add("§a$" + String.format("%.2f", calculatePrice(tier, weight)));
-
+    public void showHarvestHologram(Player player, Location location, String tier, double weight, Material cropType) {
         try {
-            Object holo = createMethod.invoke(providerInstance, holoId, holoLoc, lines);
-            activeHoloIds.add(holoId);
-
-            // Auto-remove after 3 seconds (60 ticks)
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    removeHolo(holoId);
+            // Create hologram name (unique per location and time)
+            String holoName = "farmcrops_harvest_" + player.getName() + "_" + System.currentTimeMillis();
+            
+            // Position above the block
+            Location holoLoc = location.clone().add(0.5, 1.5, 0.5);
+            
+            // Get tier color
+            String color = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
+            
+            // Create hologram lines
+            List<String> lines = new ArrayList<>();
+            lines.add(colorize(color + "&l" + capitalize(tier) + " " + formatName(cropType)));
+            lines.add(colorize("&7Weight: &f" + String.format("%.2f", weight) + " kg"));
+            
+            // Create the hologram using DHAPI
+            Hologram hologram = DHAPI.createHologram(holoName, holoLoc, lines);
+            
+            // Remove after 3 seconds
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                if (hologram != null) {
+                    DHAPI.removeHologram(holoName);
                 }
-            }.runTaskLater(plugin, 60);
-
+            }, 60L); // 60 ticks = 3 seconds
+            
         } catch (Exception e) {
-            plugin.getLogger().warning("Failed to create hologram: " + e.getMessage());
+            plugin.getLogger().warning("Failed to create harvest hologram: " + e.getMessage());
         }
     }
 
     /**
-     * Clears all active holograms. Called on plugin disable.
+     * Display a hologram above a growing crop (optional future feature)
      */
-    public void clearAll() {
-        for (String id : new ArrayList<>(activeHoloIds)) {
-            removeHolo(id);
-        }
-        activeHoloIds.clear();
-    }
-
-    private void removeHolo(String id) {
-        if (removeMethod == null || providerInstance == null) return;
+    public void showGrowingCropHologram(Block block, Material cropType, int age, int maxAge) {
         try {
-            removeMethod.invoke(providerInstance, id);
-            activeHoloIds.remove(id);
+            String holoName = "farmcrops_growing_" + block.getWorld().getName() + "_" + 
+                             block.getX() + "_" + block.getY() + "_" + block.getZ();
+            
+            Location holoLoc = block.getLocation().add(0.5, 1.0, 0.5);
+            
+            double growthPercent = (age / (double) maxAge) * 100;
+            
+            List<String> lines = new ArrayList<>();
+            lines.add(colorize("&e" + formatName(cropType)));
+            lines.add(colorize("&7Growth: &a" + String.format("%.0f", growthPercent) + "%"));
+            
+            // Check if hologram already exists
+            if (DHAPI.getHologram(holoName) != null) {
+                DHAPI.removeHologram(holoName);
+            }
+            
+            DHAPI.createHologram(holoName, holoLoc, lines);
+            
         } catch (Exception e) {
-            // Already gone, ignore
+            plugin.getLogger().warning("Failed to create growing crop hologram: " + e.getMessage());
         }
     }
 
-    private double calculatePrice(String tier, double weight) {
-        double basePrice      = plugin.getConfig().getDouble("prices.default", 1.0);
-        double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
-        return basePrice * tierMultiplier * weight;
+    /**
+     * Remove a growing crop hologram
+     */
+    public void removeGrowingCropHologram(Block block) {
+        try {
+            String holoName = "farmcrops_growing_" + block.getWorld().getName() + "_" + 
+                             block.getX() + "_" + block.getY() + "_" + block.getZ();
+            
+            if (DHAPI.getHologram(holoName) != null) {
+                DHAPI.removeHologram(holoName);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Failed to remove growing crop hologram: " + e.getMessage());
+        }
     }
-                  }
-  
+
+    private String capitalize(String s) {
+        if (s == null || s.isEmpty()) return s;
+        return s.substring(0, 1).toUpperCase() + s.substring(1);
+    }
+
+    private String formatName(Material m) {
+        return m.name().charAt(0) + m.name().substring(1).toLowerCase().replace("_", " ");
+    }
+
+    private String colorize(String s) {
+        return org.bukkit.ChatColor.translateAlternateColorCodes('&', s);
+    }
+}
