@@ -21,10 +21,12 @@ public class SellCommand implements CommandExecutor {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
         // Only players can run this
-        if (!(sender instanceof Player player)) {
+        if (!(sender instanceof Player)) {
             sender.sendMessage("This command can only be run by a player.");
             return true;
         }
+        
+        Player player = (Player) sender;
 
         double totalEarnings = 0.0;
         int    totalItems    = 0;
@@ -82,8 +84,12 @@ public class SellCommand implements CommandExecutor {
         player.sendMessage(ChatColor.GREEN + "Sold " + totalItems + " crop(s) for "
                 + ChatColor.GOLD + String.format("%.2f", totalEarnings)
                 + " " + currencyName + ChatColor.GREEN + ".");
+        
+        // Console log
+        plugin.getLogger().info(player.getName() + " sold " + totalItems + " crops for $" 
+                + String.format("%.2f", totalEarnings));
 
         return true;
     }
-                                             }
-                           
+                }
+            
