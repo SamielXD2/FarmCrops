@@ -20,11 +20,10 @@ public class CropListener implements Listener {
 
     private final FarmCrops plugin;
 
-    // Namespaced keys for storing data inside the item's NBT
     public static final NamespacedKey WEIGHT_KEY = new NamespacedKey("farmcrops", "weight");
     public static final NamespacedKey TIER_KEY   = new NamespacedKey("farmcrops", "tier");
+    public static final NamespacedKey CROP_KEY   = new NamespacedKey("farmcrops", "crop");
 
-    // Which crop materials this plugin will intercept
     private static final Material[] TRACKED_CROPS = {
             Material.WHEAT, Material.CARROT, Material.POTATO,
             Material.BEETROOT, Material.MELON
@@ -37,100 +36,83 @@ public class CropListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         Block block = event.getBlock();
-        
-        plugin.getLogger().info("DEBUG: Block broken: " + block.getType());
 
-        // Only care about crops we're tracking
-        if (!isTrackedCrop(block.getType())) {
-            return;
-        }
-        
-        plugin.getLogger().info("DEBUG: Tracked crop detected!");
+        if (!isTrackedCrop(block.getType())) return;
 
-        // Only intercept FULLY GROWN crops
-        if (!(block.getBlockData() instanceof Ageable)) {
-            return;
-        }
+        if (!(block.getBlockData() instanceof Ageable)) return;
         Ageable ageable = (Ageable) block.getBlockData();
-        if (ageable.getAge() < ageable.getMaximumAge()) {
-            plugin.getLogger().info("DEBUG: Crop not fully grown (age: " + ageable.getAge() + "/" + ageable.getMaximumAge() + ")");
-            return; // Not fully grown yet — let normal break happen
-        }
-        
-        plugin.getLogger().info("DEBUG: Crop is fully grown! Processing custom drop...");
+        if (ageable.getAge() < ageable.getMaximumAge()) return;
 
-        // --- Read config values ---
+        // --- Read config ---
         double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
         double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
 
-        // --- Roll the tier ---
+        // --- Roll tier and weight ---
         String tier   = rollTier();
         String color  = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
-
-        // --- Roll the weight ---
         double weight = ThreadLocalRandom.current().nextDouble(minWeight, maxWeight);
-        // Round to 2 decimal places for display
         weight = Math.round(weight * 100.0) / 100.0;
 
-        // --- Build the custom item ---
-        ItemStack item = new ItemStack(getDropMaterial(block.getType()), 1);
+        // --- Build the item ---
+        Material dropMat = getDropMaterial(block.getType());
+        ItemStack item = new ItemStack(dropMat, 1);
         ItemMeta meta = item.getItemMeta();
-        
+
         if (meta != null) {
-            // --- Stamp weight + tier into PersistentDataContainer (cheat-proof) ---
             PersistentDataContainer pdc = meta.getPersistentDataContainer();
             pdc.set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
             pdc.set(TIER_KEY,   PersistentDataType.STRING, tier);
+            pdc.set(CROP_KEY,   PersistentDataType.STRING, formatName(block.getType()));
 
-            // --- Set visible lore so players can see it ---
+            // Calculate price for lore display
+            double basePrice      = plugin.getConfig().getDouble("prices.default", 1.0);
+            double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
+            double price          = basePrice * tierMultiplier * weight;
+
             List<String> lore = new ArrayList<>();
-            lore.add(colorize(color) + "Tier: " + tier.substring(0, 1).toUpperCase() + tier.substring(1));
+            lore.add(colorize(color) + "Tier: " + capitalize(tier));
             lore.add("§7Weight: §f" + weight + " kg");
+            lore.add("§7Price: §a$" + String.format("%.2f", price));
             meta.setLore(lore);
 
-            // Optional: rename the item to include tier
-            meta.setDisplayName(colorize(color) + tier.substring(0, 1).toUpperCase()
-                    + tier.substring(1) + " " + formatName(block.getType()));
-            
+            meta.setDisplayName(colorize(color) + capitalize(tier) + " " + formatName(block.getType()));
             item.setItemMeta(meta);
         }
 
-        // --- Cancel the default drop and give our custom item instead ---
+        // --- Cancel default drop, give ours instead ---
         event.setDropItems(false);
         Location dropLoc = block.getLocation().add(0.5, 0.5, 0.5);
         event.getPlayer().getWorld().dropItemNaturally(dropLoc, item);
-        
-        // Debug message to console
-        plugin.getLogger().info("✓ " + event.getPlayer().getName() + " harvested a " + tier.toUpperCase() + " " 
-                + formatName(block.getType()) + " (" + weight + "kg) - Worth: $" 
-                + String.format("%.2f", plugin.getConfig().getDouble("prices.default", 1.0) 
-                * plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0) * weight));
-    }
 
-    // ---------------------------------------------------------------
-    // Tier rolling logic — reads chances from config.yml
-    // ---------------------------------------------------------------
-    private String rollTier() {
-        int roll = ThreadLocalRandom.current().nextInt(1, 101); // 1–100
+        // --- Console log (no debug spam) ---
+        double worth = plugin.getConfig().getDouble("prices.default", 1.0)
+                * plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0) * weight;
+        plugin.getLogger().info("✓ " + event.getPlayer().getName() + " harvested " + tier.toUpperCase()
+                + " " + formatName(block.getType()) + " (" + weight + "kg) — $" + String.format("%.2f", worth));
 
-        int commonChance     = plugin.getConfig().getInt("tiers.common.chance", 70);
-        int rareChance       = plugin.getConfig().getInt("tiers.rare.chance", 20);
-        int epicChance       = plugin.getConfig().getInt("tiers.epic.chance", 7);
-        // Legendary gets whatever's left (default 3)
-
-        if (roll <= commonChance) {
-            return "common";
-        } else if (roll <= commonChance + rareChance) {
-            return "rare";
-        } else if (roll <= commonChance + rareChance + epicChance) {
-            return "epic";
-        } else {
-            return "legendary";
+        // --- Hologram flash if DecentHolograms is enabled ---
+        if (plugin.isHoloEnabled()) {
+            plugin.getHoloManager().flashHarvest(block.getLocation(), tier, color, weight, formatName(block.getType()));
         }
     }
 
     // ---------------------------------------------------------------
-    // Utility helpers
+    // Tier rolling
+    // ---------------------------------------------------------------
+    private String rollTier() {
+        int roll = ThreadLocalRandom.current().nextInt(1, 101);
+        int common = plugin.getConfig().getInt("tiers.common.chance", 70);
+        int rare   = plugin.getConfig().getInt("tiers.rare.chance", 20);
+        int epic   = plugin.getConfig().getInt("tiers.epic.chance", 7);
+
+        if (roll <= common)                    return "common";
+        else if (roll <= common + rare)        return "rare";
+        else if (roll <= common + rare + epic) return "epic";
+        else                                   return "legendary";
+    }
+
+    // ---------------------------------------------------------------
+    // Utility
     // ---------------------------------------------------------------
     private boolean isTrackedCrop(Material material) {
         for (Material m : TRACKED_CROPS) {
@@ -140,25 +122,22 @@ public class CropListener implements Listener {
     }
 
     private Material getDropMaterial(Material cropBlock) {
-        // Beetroot block drops beetroots, melon block drops melon slice, etc.
-        if (cropBlock == Material.BEETROOT) {
-            return Material.BEETROOT;
-        } else if (cropBlock == Material.MELON) {
-            return Material.MELON_SLICE;
-        } else {
-            return cropBlock; // WHEAT, CARROT, POTATO drop themselves
-        }
+        if (cropBlock == Material.BEETROOT) return Material.BEETROOT;
+        if (cropBlock == Material.MELON)    return Material.MELON_SLICE;
+        return cropBlock;
     }
 
-    private String formatName(Material material) {
-        // "BEETROOT" → "Beetroot"
+    public static String capitalize(String s) {
+        return s.substring(0, 1).toUpperCase() + s.substring(1);
+    }
+
+    public static String formatName(Material material) {
         String name = material.name();
         return name.charAt(0) + name.substring(1).toLowerCase().replace("_", " ");
     }
 
-    // Converts &-style color codes to § format
-    private String colorize(String input) {
+    public static String colorize(String input) {
         return ChatColor.translateAlternateColorCodes('&', input);
     }
-                     }
-            
+                }
+        
