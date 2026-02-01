@@ -68,7 +68,9 @@ public class HoloManager {
             // Calculate min and max possible prices
             double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
             double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
-            double basePrice = plugin.getConfig().getDouble("prices.default", 10.0);
+            
+            // Use per-crop base price
+            double basePrice = plugin.getCropPrice(cropType);
             
             // Use common tier as minimum, legendary as maximum
             double minTierMultiplier = plugin.getConfig().getDouble("tiers.common.multiplier", 1.0);
