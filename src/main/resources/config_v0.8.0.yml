@@ -1,0 +1,102 @@
+# ============================================
+# FarmCrops v0.8.0 - Configuration
+# ============================================
+# Price formula:  basePrice * tierMultiplier * weight
+# Example: A 7.5kg Rare wheat = 8.0 * 2.5 * 7.5 = $150.00
+# ============================================
+
+weight:
+  min: 0.5
+  max: 10.0
+
+# ============================================
+# Per-Crop Pricing
+# ============================================
+# Each crop can have its own base price.
+# If a crop is not listed here, it falls back to 'default'.
+# ============================================
+prices:
+  default: 10.0
+  wheat: 8.0
+  carrot: 12.0
+  potato: 10.0
+  beetroot: 15.0
+  melon: 18.0
+
+tiers:
+  common:
+    chance: 70
+    multiplier: 1.0
+    color: "&7"
+  
+  rare:
+    chance: 19
+    multiplier: 2.5
+    color: "&b"
+  
+  epic:
+    chance: 7
+    multiplier: 5.0
+    color: "&5"
+  
+  legendary:
+    chance: 3
+    multiplier: 12.0
+    color: "&6"
+  
+  mythic:
+    chance: 1
+    multiplier: 25.0
+    color: "&c"
+
+# ============================================
+# Seed Drop Settings
+# ============================================
+# Controls whether seeds drop when a crop is harvested.
+# Each crop has its own drop chance (0-100).
+# ============================================
+seeds:
+  enabled: true
+  wheat:
+    chance: 100
+    min: 1
+    max: 4
+  carrot:
+    chance: 75
+    min: 1
+    max: 3
+  potato:
+    chance: 75
+    min: 1
+    max: 4
+  beetroot:
+    chance: 100
+    min: 1
+    max: 4
+
+# ============================================
+# Hologram Settings (requires DecentHolograms)
+# ============================================
+holograms:
+  harvest-flash: true     # Show hologram when crop is harvested (3 seconds)
+  growing-cursor: true    # Show hologram when looking at growing crop
+  particles: true         # Particle effects on harvest (color matches tier)
+  particle-amount: 10     # Number of particles to spawn (5-20 recommended)
+
+# ============================================
+# Visual Settings (v0.8.0+)
+# ============================================
+# NEW: Item scaling based on weight (like Grow a Garden)
+# Heavier crops appear visually larger in hand/ground
+# ============================================
+visual:
+  item-scaling: true      # Enable/disable weight-based item scaling
+  scale-min: 0.75         # Minimum scale (for 0.5kg crops)
+  scale-max: 1.5          # Maximum scale (for 10kg crops)
+
+# ============================================
+# Leaderboard Settings
+# ============================================
+leaderboard:
+  sort-by: earnings       # Options: earnings, harvests
+  page-size: 10           # Players per page
