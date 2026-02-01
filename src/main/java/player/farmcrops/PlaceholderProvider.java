@@ -7,6 +7,17 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
+/**
+ * PlaceholderAPI integration.
+ *
+ * Placeholders:
+ *   %farmcrops_price%           — Sell price of item in main hand
+ *   %farmcrops_tier%            — Tier of item in main hand
+ *   %farmcrops_weight%          — Weight of item in main hand
+ *   %farmcrops_crop%            — Crop type of item in main hand
+ *   %farmcrops_stats_harvests%  — Player's total harvests
+ *   %farmcrops_stats_earnings%  — Player's total earnings
+ */
 public class PlaceholderProvider extends PlaceholderExpansion {
 
     private final FarmCrops plugin;
@@ -15,108 +26,98 @@ public class PlaceholderProvider extends PlaceholderExpansion {
         this.plugin = plugin;
     }
 
-    @Override
-    @NotNull
-    public String getIdentifier() {
-        return "farmcrops";
-    }
-
-    @Override
-    @NotNull
-    public String getAuthor() {
-        return "Player";
-    }
-
-    @Override
-    @NotNull
-    public String getVersion() {
-        return "0.5.0";
-    }
-
-    @Override
-    public boolean persist() {
-        return true;
-    }
+    @Override @NotNull public String getIdentifier() { return "farmcrops"; }
+    @Override @NotNull public String getAuthor()     { return "Player"; }
+    @Override @NotNull public String getVersion()    { return "0.6.0"; }
+    @Override public boolean persist()               { return true; }
 
     @Override
     public String onPlaceholderRequest(Player player, @NotNull String identifier) {
-        if (player == null) {
-            return "";
+        if (player == null) return "";
+
+        switch (identifier) {
+            case "price": {
+                ItemStack item = player.getInventory().getItemInMainHand();
+                if (item == null || item.getType().isAir() || !item.hasItemMeta()) return "N/A";
+
+                PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+                if (!pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) return "N/A";
+
+                double weight = pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
+                String tier = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
+
+                // Use per-crop pricing — determine crop type from PDC or fall back to default
+                String cropName = pdc.getOrDefault(CropListener.CROP_KEY, PersistentDataType.STRING, null);
+                double basePrice;
+                if (cropName != null) {
+                    try {
+                        basePrice = plugin.getCropPrice(org.bukkit.Material.valueOf(cropName));
+                    } catch (IllegalArgumentException e) {
+                        basePrice = plugin.getConfig().getDouble("prices.default", 10.0);
+                    }
+                } else {
+                    basePrice = plugin.getConfig().getDouble("prices.default", 10.0);
+                }
+
+                double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
+                return String.format("%.2f", basePrice * tierMultiplier * weight);
+            }
+
+            case "tier": {
+                ItemStack item = player.getInventory().getItemInMainHand();
+                if (item == null || item.getType().isAir() || !item.hasItemMeta()) return "N/A";
+
+                PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+                String tier = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, null);
+                return tier != null ? capitalize(tier) : "N/A";
+            }
+
+            case "weight": {
+                ItemStack item = player.getInventory().getItemInMainHand();
+                if (item == null || item.getType().isAir() || !item.hasItemMeta()) return "N/A";
+
+                PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
+                if (!pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) return "N/A";
+
+                return String.format("%.2f", pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE));
+            }
+
+            case "crop": {
+                ItemStack item = player.getInventory().getItemInMainHand();
+                if (item == null || item.getType().isAir()) return "N/A";
+
+                PersistentDataContainer pdc = item.hasItemMeta()
+                    ? item.getItemMeta().getPersistentDataContainer() : null;
+
+                if (pdc != null && pdc.has(CropListener.CROP_KEY, PersistentDataType.STRING)) {
+                    String cropName = pdc.get(CropListener.CROP_KEY, PersistentDataType.STRING);
+                    try {
+                        return CropListener.formatName(org.bukkit.Material.valueOf(cropName));
+                    } catch (IllegalArgumentException e) {
+                        // fall through
+                    }
+                }
+                return CropListener.formatName(item.getType());
+            }
+
+            // Stats placeholders
+            case "stats_harvests": {
+                StatsManager.PlayerStats stats = plugin.getStatsManager().getStats(player.getUniqueId());
+                return String.valueOf(stats.totalHarvests);
+            }
+
+            case "stats_earnings": {
+                StatsManager.PlayerStats stats = plugin.getStatsManager().getStats(player.getUniqueId());
+                return String.format("%.2f", stats.totalEarnings);
+            }
+
+            default:
+                return null;
         }
-
-        // %farmcrops_price% - Shows sell price of held item
-        if (identifier.equals("price")) {
-            ItemStack item = player.getInventory().getItemInMainHand();
-            if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
-                return "N/A";
-            }
-
-            PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
-            if (!pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) {
-                return "N/A";
-            }
-
-            double weight = pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
-            String tier = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
-
-            double basePrice = plugin.getConfig().getDouble("prices.default", 1.0);
-            double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
-            double price = basePrice * tierMultiplier * weight;
-
-            return String.format("%.2f", price);
-        }
-
-        // %farmcrops_tier% - Shows tier of held item
-        if (identifier.equals("tier")) {
-            ItemStack item = player.getInventory().getItemInMainHand();
-            if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
-                return "N/A";
-            }
-
-            PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
-            String tier = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, null);
-            if (tier == null) {
-                return "N/A";
-            }
-
-            return capitalize(tier);
-        }
-
-        // %farmcrops_weight% - Shows weight of held item
-        if (identifier.equals("weight")) {
-            ItemStack item = player.getInventory().getItemInMainHand();
-            if (item == null || item.getType().isAir() || !item.hasItemMeta()) {
-                return "N/A";
-            }
-
-            PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
-            if (!pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) {
-                return "N/A";
-            }
-
-            double weight = pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
-            return String.format("%.2f", weight);
-        }
-
-        // %farmcrops_crop% - Shows crop type of held item
-        if (identifier.equals("crop")) {
-            ItemStack item = player.getInventory().getItemInMainHand();
-            if (item == null || item.getType().isAir()) {
-                return "N/A";
-            }
-
-            return formatName(item.getType());
-        }
-
-        return null;
     }
 
     private String capitalize(String s) {
         if (s == null || s.isEmpty()) return s;
         return s.substring(0, 1).toUpperCase() + s.substring(1);
-    }
-
-    private String formatName(org.bukkit.Material m) {
-        return m.name().charAt(0) + m.name().substring(1).toLowerCase().replace("_", " ");
     }
 }
