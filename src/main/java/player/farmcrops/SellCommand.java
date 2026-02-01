@@ -26,7 +26,7 @@ public class SellCommand implements CommandExecutor {
 
         // Open the sell GUI
         plugin.getSellGUI().openGUI(player);
-
+        
         return true;
     }
 }
