@@ -73,6 +73,7 @@ public class StatsCommand implements CommandExecutor {
         viewer.sendMessage(ChatColor.AQUA  + "  " + ChatColor.AQUA    + "Rare:      " + stats.rareHarvests);
         viewer.sendMessage(ChatColor.LIGHT_PURPLE + "  " + ChatColor.LIGHT_PURPLE + "Epic:      " + stats.epicHarvests);
         viewer.sendMessage(ChatColor.GOLD  + "  " + ChatColor.GOLD    + "Legendary: " + stats.legendaryHarvests);
+        viewer.sendMessage(ChatColor.RED   + "  " + ChatColor.RED     + "Mythic:    " + stats.mythicHarvests);
         viewer.sendMessage("");
 
         // Per-crop breakdown
