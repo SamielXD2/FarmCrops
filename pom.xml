@@ -4,18 +4,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
- 
+
     <groupId>player</groupId>
     <artifactId>FarmCrops</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
- 
+
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
- 
+
     <repositories>
         <!-- Paper Repository -->
         <repository>
@@ -41,7 +41,7 @@
             <url>https://repo.codemc.io/repository/maven-public/</url>
         </repository>
     </repositories>
- 
+
     <dependencies>
         <!-- Paper API -->
         <dependency>
@@ -50,7 +50,7 @@
             <version>1.21.4-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
-        
+
         <!-- Vault API -->
         <dependency>
             <groupId>com.github.MilkBowl</groupId>
@@ -58,7 +58,7 @@
             <version>1.7</version>
             <scope>provided</scope>
         </dependency>
-        
+
         <!-- PlaceholderAPI -->
         <dependency>
             <groupId>me.clip</groupId>
@@ -66,7 +66,7 @@
             <version>2.11.5</version>
             <scope>provided</scope>
         </dependency>
-        
+
         <!-- DecentHolograms -->
         <dependency>
             <groupId>com.github.decentsoftware-eu</groupId>
@@ -74,7 +74,7 @@
             <version>2.9.9</version>
             <scope>provided</scope>
         </dependency>
-        
+
         <!-- Item NBT API (required by DecentHolograms) -->
         <dependency>
             <groupId>de.tr7zw</groupId>
@@ -83,7 +83,7 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
- 
+
     <build>
         <finalName>${project.artifactId}</finalName>
     </build>
