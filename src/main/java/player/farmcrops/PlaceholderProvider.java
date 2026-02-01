@@ -30,7 +30,7 @@ public class PlaceholderProvider extends PlaceholderExpansion {
     @Override
     @NotNull
     public String getVersion() {
-        return "1.0.0";
+        return "0.5.0";
     }
 
     @Override
@@ -75,7 +75,6 @@ public class PlaceholderProvider extends PlaceholderExpansion {
 
             PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
             String tier = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, null);
-
             if (tier == null) {
                 return "N/A";
             }
