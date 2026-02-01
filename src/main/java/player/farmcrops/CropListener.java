@@ -1,6 +1,8 @@
 package player.farmcrops;
 
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Player;
@@ -8,12 +10,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.util.RayTraceResult;
 
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
@@ -22,7 +23,7 @@ public class CropListener implements Listener {
 
     private final FarmCrops plugin;
 
-    // PDC keys — only WEIGHT and TIER. No more STACK_ID_KEY (it did nothing).
+    // PDC keys
     public static final NamespacedKey WEIGHT_KEY = new NamespacedKey("farmcrops", "weight");
     public static final NamespacedKey TIER_KEY   = new NamespacedKey("farmcrops", "tier");
     public static final NamespacedKey CROP_KEY   = new NamespacedKey("farmcrops", "crop");
@@ -31,9 +32,6 @@ public class CropListener implements Listener {
             Material.WHEAT, Material.CARROTS, Material.POTATOES,
             Material.BEETROOTS, Material.MELON
     };
-
-    // Track which block each player is looking at to avoid hologram spam
-    private final Map<UUID, Block> playerLookingAt = new HashMap<>();
 
     public CropListener(FarmCrops plugin) {
         this.plugin = plugin;
@@ -45,14 +43,13 @@ public class CropListener implements Listener {
 
         if (!isTrackedCrop(block.getType())) return;
 
-        // Permission check — if player doesn't have farmcrops.harvest, let vanilla handle it
         Player player = event.getPlayer();
         if (!player.hasPermission("farmcrops.harvest")) return;
 
         if (!(block.getBlockData() instanceof Ageable)) return;
         Ageable ageable = (Ageable) block.getBlockData();
         if (ageable.getAge() < ageable.getMaximumAge()) {
-            return; // Not fully grown, let vanilla handle
+            return;
         }
 
         String tier  = rollTier();
@@ -60,10 +57,10 @@ public class CropListener implements Listener {
 
         double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
         double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
+
         double weight = ThreadLocalRandom.current().nextDouble(minWeight, maxWeight);
         weight = Math.round(weight * 100.0) / 100.0;
 
-        // Per-crop pricing with fallback to default
         double basePrice = getCropPrice(block.getType());
         double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
         double price = basePrice * tierMultiplier * weight;
@@ -78,6 +75,36 @@ public class CropListener implements Listener {
             pdc.set(TIER_KEY, PersistentDataType.STRING, tier);
             pdc.set(CROP_KEY, PersistentDataType.STRING, block.getType().name());
 
+            // ============================================
+            // v0.8.0: ITEM SCALING BASED ON WEIGHT
+            // ============================================
+            // Heavier crops appear larger (like Grow a Garden)
+            // Can be toggled in config: visual.item-scaling
+            // ============================================
+            if (plugin.getConfig().getBoolean("visual.item-scaling", true)) {
+                double scaleMin = plugin.getConfig().getDouble("visual.scale-min", 0.75);
+                double scaleMax = plugin.getConfig().getDouble("visual.scale-max", 1.5);
+                
+                // Calculate scale based on weight
+                // weight ranges from minWeight to maxWeight
+                // scale ranges from scaleMin to scaleMax
+                double weightRange = maxWeight - minWeight;
+                double scaleRange = scaleMax - scaleMin;
+                double normalizedWeight = (weight - minWeight) / weightRange;
+                double scale = scaleMin + (normalizedWeight * scaleRange);
+                
+                // Apply item scale attribute
+                NamespacedKey scaleKey = new NamespacedKey("farmcrops", "item_scale");
+                AttributeModifier scaleModifier = new AttributeModifier(
+                    scaleKey,
+                    scale,
+                    AttributeModifier.Operation.ADD_SCALAR,
+                    EquipmentSlotGroup.ANY
+                );
+                meta.addAttributeModifier(Attribute.GENERIC_SCALE, scaleModifier);
+            }
+
+            // Lore
             List<String> lore = new ArrayList<>();
             lore.add(colorize(color) + "Tier: " + capitalize(tier));
             lore.add(colorize("&7Weight: &f" + weight + " kg"));
@@ -88,24 +115,24 @@ public class CropListener implements Listener {
             item.setItemMeta(meta);
         }
 
-        // Cancel vanilla drops entirely — we handle everything manually
+        // Cancel vanilla drops
         event.setDropItems(false);
         Location dropLoc = block.getLocation().add(0.5, 0.5, 0.5);
 
-        // Drop the custom crop item
+        // Drop the custom crop
         player.getWorld().dropItemNaturally(dropLoc, item);
 
-        // Drop seeds based on per-crop config
+        // Drop seeds
         dropSeeds(block.getType(), dropLoc, player.getWorld());
 
-        // Harvest hologram flash
+        // Harvest hologram
         if (plugin.isHoloEnabled() && plugin.getConfig().getBoolean("holograms.harvest-flash", true)) {
             plugin.getHoloManager().flashHarvest(
                 dropLoc, player.getName(), tier, weight, price, formatName(block.getType())
             );
         }
 
-        // Tier-colored particles
+        // Particles
         if (plugin.isHoloEnabled() && plugin.getConfig().getBoolean("holograms.particles", true)) {
             spawnHarvestParticles(dropLoc, tier);
         }
@@ -117,10 +144,6 @@ public class CropListener implements Listener {
             + " " + formatName(block.getType()) + " (" + weight + "kg) - Worth: $" + String.format("%.2f", price));
     }
 
-    /**
-     * Drop seeds based on per-crop config settings.
-     * Each crop has its own chance, min, and max in config.
-     */
     private void dropSeeds(Material cropType, Location location, World world) {
         if (!plugin.getConfig().getBoolean("seeds.enabled", true)) return;
 
@@ -145,7 +168,6 @@ public class CropListener implements Listener {
                 seedMaterial = Material.BEETROOT_SEEDS;
                 break;
             case MELON:
-                // Melons only drop seeds via silk touch on the stem — skip
                 return;
             default:
                 return;
@@ -154,15 +176,12 @@ public class CropListener implements Listener {
         if (cropKey == null || seedMaterial == null) return;
 
         String prefix = "seeds." + cropKey + ".";
-
-        // Check if this crop's seed config exists; if not, skip silently
         if (!plugin.getConfig().contains(prefix + "chance")) return;
 
         int chance = plugin.getConfig().getInt(prefix + "chance", 100);
         int minSeeds = plugin.getConfig().getInt(prefix + "min", 1);
         int maxSeeds = plugin.getConfig().getInt(prefix + "max", 4);
 
-        // Roll the chance
         if (ThreadLocalRandom.current().nextInt(1, 101) > chance) return;
 
         int amount = ThreadLocalRandom.current().nextInt(minSeeds, maxSeeds + 1);
@@ -170,10 +189,6 @@ public class CropListener implements Listener {
         world.dropItemNaturally(location, seeds);
     }
 
-    /**
-     * Get the base price for a specific crop type.
-     * Falls back to prices.default if no crop-specific price is configured.
-     */
     public double getCropPrice(Material cropType) {
         String cropKey = null;
         switch (cropType) {
@@ -191,15 +206,11 @@ public class CropListener implements Listener {
         return plugin.getConfig().getDouble("prices.default", 10.0);
     }
 
-    /**
-     * Spawn particle effects matching the tier color
-     */
     private void spawnHarvestParticles(Location location, String tier) {
         World world = location.getWorld();
         if (world == null) return;
 
         int particleAmount = plugin.getConfig().getInt("holograms.particle-amount", 10);
-
         Particle particleType;
         Object particleData = null;
 
@@ -219,13 +230,16 @@ public class CropListener implements Listener {
                 particleType = Particle.DUST;
                 particleData = new Particle.DustOptions(Color.ORANGE, 2.0f);
                 break;
+            case "mythic":
+                particleType = Particle.DUST;
+                particleData = new Particle.DustOptions(Color.RED, 2.5f);
+                break;
             default:
                 particleType = Particle.SMOKE;
                 break;
         }
 
         Location particleLoc = location.clone().add(0.5, 0.5, 0.5);
-
         if (particleData != null) {
             world.spawnParticle(particleType, particleLoc, particleAmount, 0.3, 0.3, 0.3, 0.1, particleData);
         } else {
@@ -233,72 +247,18 @@ public class CropListener implements Listener {
         }
     }
 
-    /**
-     * Show hologram when player looks at a growing crop
-     */
-    @EventHandler
-    public void onPlayerMove(PlayerMoveEvent event) {
-        if (!plugin.isHoloEnabled() || !plugin.getConfig().getBoolean("holograms.growing-cursor", true)) {
-            return;
-        }
-
-        Player player = event.getPlayer();
-
-        // Throttle to every 10 ticks (0.5 seconds)
-        if (player.getWorld().getGameTime() % 10 != 0) return;
-
-        RayTraceResult result = player.rayTraceBlocks(5.0);
-
-        if (result == null || result.getHitBlock() == null) {
-            Block previousBlock = playerLookingAt.remove(player.getUniqueId());
-            if (previousBlock != null) {
-                plugin.getHoloManager().removeGrowingCropHologram(previousBlock);
-            }
-            return;
-        }
-
-        Block targetBlock = result.getHitBlock();
-
-        if (!isTrackedCrop(targetBlock.getType())) {
-            Block previousBlock = playerLookingAt.remove(player.getUniqueId());
-            if (previousBlock != null) {
-                plugin.getHoloManager().removeGrowingCropHologram(previousBlock);
-            }
-            return;
-        }
-
-        Block previousBlock = playerLookingAt.get(player.getUniqueId());
-        if (previousBlock != null && previousBlock.equals(targetBlock)) {
-            return; // Same block, no update needed
-        }
-
-        if (previousBlock != null) {
-            plugin.getHoloManager().removeGrowingCropHologram(previousBlock);
-        }
-
-        if (targetBlock.getBlockData() instanceof Ageable) {
-            Ageable ageable = (Ageable) targetBlock.getBlockData();
-            playerLookingAt.put(player.getUniqueId(), targetBlock);
-            plugin.getHoloManager().showGrowingCropHologram(
-                targetBlock, targetBlock.getType(), ageable.getAge(), ageable.getMaximumAge()
-            );
-        }
-    }
-
-    // ─────────────────────────────────────────────
-    // Utility methods
-    // ─────────────────────────────────────────────
-
     private String rollTier() {
         int roll = ThreadLocalRandom.current().nextInt(1, 101);
         int common = plugin.getConfig().getInt("tiers.common.chance", 70);
-        int rare   = plugin.getConfig().getInt("tiers.rare.chance", 20);
+        int rare   = plugin.getConfig().getInt("tiers.rare.chance", 19);
         int epic   = plugin.getConfig().getInt("tiers.epic.chance", 7);
+        int legendary = plugin.getConfig().getInt("tiers.legendary.chance", 3);
 
-        if (roll <= common)                    return "common";
-        else if (roll <= common + rare)        return "rare";
-        else if (roll <= common + rare + epic) return "epic";
-        else                                   return "legendary";
+        if (roll <= common)                                        return "common";
+        else if (roll <= common + rare)                            return "rare";
+        else if (roll <= common + rare + epic)                     return "epic";
+        else if (roll <= common + rare + epic + legendary)         return "legendary";
+        else                                                       return "mythic";
     }
 
     private boolean isTrackedCrop(Material m) {
