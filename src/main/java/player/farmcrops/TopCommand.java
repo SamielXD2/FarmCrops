@@ -96,7 +96,7 @@ public class TopCommand implements CommandExecutor {
                     stats = ChatColor.GOLD + "$" + String.format("%.2f", entry.earnings)
                         + ChatColor.GRAY + " (" + entry.harvests + " harvests)";
                 } else {
-                    stats = ChatColor.WHITE + entry.harvests + " harvests"
+                    stats = "" + ChatColor.WHITE + entry.harvests + " harvests"
                         + ChatColor.GRAY + " ($" + String.format("%.2f", entry.earnings) + ")";
                 }
 
