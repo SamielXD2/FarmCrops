@@ -14,12 +14,16 @@ import java.util.*;
 /**
  * /farmsettings — Admin GUI to toggle plugin features without editing config.
  * Protected by farmcrops.settings permission.
+ * 
+ * IMPORTANT: These settings are GLOBAL and affect ALL PLAYERS on the server!
+ * This is NOT a per-player settings menu.
  *
  * Layout (27-slot inventory):
  *   Slot 0: Holograms toggle
  *   Slot 1: Particles toggle
  *   Slot 2: Growing Cursor toggle
  *   Slot 3: Seed Drops toggle
+ *   Slot 4: Item Scaling toggle (v0.8.0+)
  *   Slot 8: Close button
  */
 public class SettingsGUI implements Listener {
@@ -28,11 +32,13 @@ public class SettingsGUI implements Listener {
     private final Map<Player, Inventory> playerGUIs = new HashMap<>();
 
     // Each toggle maps to a config path
+    // Format: { config_path, display_name, description }
     private static final String[][] TOGGLES = {
         { "holograms.harvest-flash",  "Harvest Hologram",  "Show hologram on harvest" },
         { "holograms.growing-cursor", "Growing Cursor",    "Hologram when looking at crops" },
         { "holograms.particles",      "Particles",         "Particle effects on harvest" },
         { "seeds.enabled",            "Seed Drops",        "Drop seeds when harvesting" },
+        { "visual.item-scaling",      "Item Scaling",      "Scale crop size by weight" },
     };
 
     public SettingsGUI(FarmCrops plugin) {
@@ -53,6 +59,22 @@ public class SettingsGUI implements Listener {
             gui.setItem(i, buildToggleItem(TOGGLES[i][0], TOGGLES[i][1], TOGGLES[i][2]));
         }
 
+        // Info button
+        ItemStack infoBtn = new ItemStack(Material.BOOK);
+        ItemMeta im = infoBtn.getItemMeta();
+        if (im != null) {
+            im.setDisplayName(ChatColor.YELLOW + "" + ChatColor.BOLD + "INFO");
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + "These settings are GLOBAL");
+            lore.add(ChatColor.GRAY + "Changes affect ALL players");
+            lore.add("");
+            lore.add(ChatColor.GREEN + "✓ Admins can toggle features");
+            lore.add(ChatColor.GRAY + "without editing config.yml");
+            im.setLore(lore);
+            infoBtn.setItemMeta(im);
+        }
+        gui.setItem(4, infoBtn);
+
         // Close button
         ItemStack closeBtn = new ItemStack(Material.BARRIER);
         ItemMeta cm = closeBtn.getItemMeta();
@@ -68,7 +90,6 @@ public class SettingsGUI implements Listener {
 
     private ItemStack buildToggleItem(String configPath, String label, String description) {
         boolean enabled = plugin.getConfig().getBoolean(configPath, true);
-
         Material mat = enabled ? Material.LIME_STAINED_GLASS : Material.RED_STAINED_GLASS;
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
@@ -79,6 +100,7 @@ public class SettingsGUI implements Listener {
             lore.add(ChatColor.GRAY + description);
             lore.add("");
             lore.add(ChatColor.YELLOW + "Click to toggle");
+            lore.add(ChatColor.DARK_GRAY + "Affects all players globally");
             meta.setLore(lore);
             item.setItemMeta(meta);
         }
@@ -89,7 +111,6 @@ public class SettingsGUI implements Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) return;
         Player player = (Player) event.getWhoClicked();
-
         if (!playerGUIs.containsKey(player)) return;
 
         String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
@@ -110,6 +131,11 @@ public class SettingsGUI implements Listener {
             return;
         }
 
+        // Info button - do nothing
+        if (slot == 4) {
+            return;
+        }
+
         // Toggle buttons (slots 0 to TOGGLES.length-1)
         if (slot >= 0 && slot < TOGGLES.length) {
             String configPath = TOGGLES[slot][0];
@@ -126,7 +152,8 @@ public class SettingsGUI implements Listener {
             gui.setItem(slot, buildToggleItem(TOGGLES[slot][0], TOGGLES[slot][1], TOGGLES[slot][2]));
 
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
-            player.sendMessage(ChatColor.GREEN + TOGGLES[slot][1] + " → " + (newValue ? "ON" : "OFF"));
+            player.sendMessage(ChatColor.GREEN + TOGGLES[slot][1] + " → " + (newValue ? ChatColor.GREEN + "ON" : ChatColor.RED + "OFF"));
+            player.sendMessage(ChatColor.GRAY + "(Changed globally for all players)");
         }
     }
 }
