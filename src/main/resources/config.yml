@@ -1,5 +1,5 @@
 # ============================================
-# FarmCrops v0.4.0 - Configuration
+# FarmCrops v0.5.0 - Configuration
 # ============================================
 # Price formula:  basePrice * tierMultiplier * weight
 # Example: A 7.5kg Rare wheat = 10.0 * 2.5 * 7.5 = $187.50
@@ -10,25 +10,41 @@ weight:
   max: 10.0
 
 prices:
-  default: 10.0     # $10.00 per kg (increased from 1.0)
+  default: 10.0     # $10.00 per kg
 
 tiers:
   common:
     chance: 70
     multiplier: 1.0
     color: "&7"
-
+  
   rare:
     chance: 20
     multiplier: 2.5
     color: "&b"
-
+  
   epic:
     chance: 7
     multiplier: 5.0
     color: "&5"
-
+  
   legendary:
     chance: 3
     multiplier: 12.0
     color: "&6"
+
+# ============================================
+# Stacking System
+# ============================================
+stacking:
+  combine-tiers: true    # If true, crops of the same tier will stack together
+                         # If false, each crop is unique and won't stack
+
+# ============================================
+# Hologram Settings (requires DecentHolograms)
+# ============================================
+holograms:
+  harvest-flash: true     # Show hologram when crop is harvested (3 seconds)
+  growing-cursor: true    # Show hologram when looking at growing crop
+  particles: true         # Particle effects on harvest (color matches tier)
+  particle-amount: 10     # Number of particles to spawn (5-20 recommended)
