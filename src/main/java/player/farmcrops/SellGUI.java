@@ -70,16 +70,47 @@ public class SellGUI implements Listener {
     private void loadPlayerCrops(Player player, Inventory gui) {
         int slot = 0;
         ItemStack[] contents = player.getInventory().getContents();
-        
+
         for (int i = 0; i < contents.length; i++) {
             if (slot >= 45) break;
-            
+
             ItemStack item = contents[i];
             if (item != null && !item.getType().isAir() && item.hasItemMeta()) {
                 PersistentDataContainer pdc = item.getItemMeta().getPersistentDataContainer();
                 if (pdc.has(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE)) {
+                    // Clone item and add price info to lore if not already there
+                    ItemStack displayItem = item.clone();
+                    ItemMeta meta = displayItem.getItemMeta();
+                    
+                    if (meta != null) {
+                        List<String> lore = meta.hasLore() ? meta.getLore() : new ArrayList<>();
+                        
+                        // Check if price line already exists
+                        boolean hasPriceLine = false;
+                        for (String line : lore) {
+                            if (line.contains("Price:") || line.contains("Value:")) {
+                                hasPriceLine = true;
+                                break;
+                            }
+                        }
+                        
+                        // Add price line if not present
+                        if (!hasPriceLine) {
+                            double weight = pdc.get(CropListener.WEIGHT_KEY, PersistentDataType.DOUBLE);
+                            String tier = pdc.getOrDefault(CropListener.TIER_KEY, PersistentDataType.STRING, "common");
+                            double basePrice = plugin.getConfig().getDouble("prices.default", 10.0);
+                            double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
+                            double price = basePrice * tierMultiplier * weight;
+                            
+                            lore.add(ChatColor.translateAlternateColorCodes('&', "&7Price: &a$" + String.format("%.2f", price)));
+                            meta.setLore(lore);
+                            displayItem.setItemMeta(meta);
+                        }
+                    }
+                    
                     // Add to GUI
-                    gui.setItem(slot++, item.clone());
+                    gui.setItem(slot++, displayItem);
+                    
                     // CRITICAL: Remove from player inventory to prevent duplication
                     player.getInventory().setItem(i, null);
                 }
@@ -89,7 +120,7 @@ public class SellGUI implements Listener {
 
     private double calculateTotalValue(Inventory gui) {
         double total = 0.0;
-        
+
         for (int i = 0; i < 45; i++) {
             ItemStack item = gui.getItem(i);
             if (item == null || item.getType().isAir() || !item.hasItemMeta()) continue;
@@ -111,6 +142,7 @@ public class SellGUI implements Listener {
 
     private int countTotalCrops(Inventory gui) {
         int count = 0;
+
         for (int i = 0; i < 45; i++) {
             ItemStack item = gui.getItem(i);
             if (item != null && !item.getType().isAir() && item.hasItemMeta()) {
@@ -120,6 +152,7 @@ public class SellGUI implements Listener {
                 }
             }
         }
+
         return count;
     }
 
@@ -129,10 +162,9 @@ public class SellGUI implements Listener {
         Player player = (Player) event.getWhoClicked();
 
         if (!playerGUIs.containsKey(player)) return;
-        
+
         String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
             .serialize(event.getView().title());
-        
         if (!title.equals("Sell Crops")) return;
 
         Inventory gui = playerGUIs.get(player);
@@ -194,7 +226,6 @@ public class SellGUI implements Listener {
 
         String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
             .serialize(event.getView().title());
-        
         if (title.equals("Sell Crops")) {
             Inventory gui = playerGUIs.get(player);
             returnCropsToPlayer(player, gui);
@@ -209,12 +240,14 @@ public class SellGUI implements Listener {
 
         double basePrice = plugin.getConfig().getDouble("prices.default", 1.0);
         double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
+
         double value = basePrice * tierMultiplier * weight * crop.getAmount();
 
         Economy economy = plugin.getEconomy();
         economy.depositPlayer(player, value);
 
         gui.setItem(slot, null);
+
         player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
         player.sendMessage(ChatColor.GREEN + "Sold " + crop.getAmount() + "x " + 
                           crop.getItemMeta().getDisplayName() + ChatColor.GREEN + " for " + 
@@ -265,21 +298,23 @@ public class SellGUI implements Listener {
     private void refreshSellAllButton(Inventory gui) {
         ItemStack sellAllButton = new ItemStack(Material.EMERALD_BLOCK);
         ItemMeta sellMeta = sellAllButton.getItemMeta();
+
         if (sellMeta != null) {
             sellMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "SELL ALL");
-            
+
             double totalValue = calculateTotalValue(gui);
             int totalItems = countTotalCrops(gui);
-            
+
             List<String> lore = new ArrayList<>();
             lore.add(ChatColor.GRAY + "Click to sell all crops");
             lore.add("");
             lore.add(ChatColor.YELLOW + "Total Items: " + ChatColor.WHITE + totalItems);
             lore.add(ChatColor.YELLOW + "Total Value: " + ChatColor.GOLD + "$" + String.format("%.2f", totalValue));
+
             sellMeta.setLore(lore);
-            
             sellAllButton.setItemMeta(sellMeta);
         }
+
         gui.setItem(49, sellAllButton);
     }
 
