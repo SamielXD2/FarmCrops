@@ -11,6 +11,7 @@ public class FarmCrops extends JavaPlugin {
     private Economy economy;
     private SellGUI sellGUI;
     private HoloManager holoManager;
+    private StatsManager statsManager;
     private boolean holoEnabled = false;
 
     @Override
@@ -19,7 +20,7 @@ public class FarmCrops extends JavaPlugin {
 
         getLogger().info("========================================");
         getLogger().info("========================================");
-        getLogger().info("       FARMCROPS v0.4.0");
+        getLogger().info("       FARMCROPS v0.5.0");
         getLogger().info("  Weight-Based Crop Economy System");
         getLogger().info("========================================");
         getLogger().info("========================================");
@@ -32,6 +33,7 @@ public class FarmCrops extends JavaPlugin {
         getLogger().info("  - Weight Range: " + getConfig().getDouble("weight.min") + "kg - " + getConfig().getDouble("weight.max") + "kg");
         getLogger().info("  - Base Price: $" + getConfig().getDouble("prices.default") + " per kg");
         getLogger().info("  - Tier System: 4 tiers configured");
+        getLogger().info("  - Stacking: " + (getConfig().getBoolean("stacking.combine-tiers") ? "Enabled (same tier)" : "Disabled"));
         getLogger().info("");
 
         getLogger().info("Searching for Vault...");
@@ -51,6 +53,11 @@ public class FarmCrops extends JavaPlugin {
         }
         getLogger().info("✓ Vault found and hooked!");
         getLogger().info("  - Economy Provider: " + economy.getName());
+        getLogger().info("");
+
+        // Initialize stats manager
+        statsManager = new StatsManager(this);
+        getLogger().info("✓ Player statistics system initialized");
         getLogger().info("");
 
         getLogger().info("Registering event listeners...");
@@ -91,6 +98,9 @@ public class FarmCrops extends JavaPlugin {
             holoManager = new HoloManager(this);
             holoEnabled = true;
             getLogger().info("✓ DecentHolograms integration active");
+            getLogger().info("  - Harvest Flash: " + getConfig().getBoolean("holograms.harvest-flash"));
+            getLogger().info("  - Growing Cursor: " + getConfig().getBoolean("holograms.growing-cursor"));
+            getLogger().info("  - Particles: " + getConfig().getBoolean("holograms.particles"));
             getLogger().info("");
         } else {
             getLogger().info("DecentHolograms not found - hologram support disabled");
@@ -100,7 +110,7 @@ public class FarmCrops extends JavaPlugin {
         getLogger().info("========================================");
         getLogger().info("  ✓✓✓ FARMCROPS ENABLED ✓✓✓");
         getLogger().info("========================================");
-        getLogger().info("  Version: 0.4.0");
+        getLogger().info("  Version: 0.5.0");
         getLogger().info("  Author: Player");
         getLogger().info("  All systems operational!");
         getLogger().info("========================================");
@@ -109,8 +119,14 @@ public class FarmCrops extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Save all player stats before shutdown
+        if (statsManager != null) {
+            getLogger().info("Saving player statistics...");
+            statsManager.saveAll();
+        }
+        
         getLogger().info("========================================");
-        getLogger().info("  FarmCrops v0.4.0 shutting down...");
+        getLogger().info("  FarmCrops v0.5.0 shutting down...");
         getLogger().info("  Thanks for using FarmCrops!");
         getLogger().info("========================================");
     }
@@ -146,5 +162,9 @@ public class FarmCrops extends JavaPlugin {
     
     public HoloManager getHoloManager() {
         return holoManager;
+    }
+    
+    public StatsManager getStatsManager() {
+        return statsManager;
     }
 }
