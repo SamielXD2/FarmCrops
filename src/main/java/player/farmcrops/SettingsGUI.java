@@ -113,9 +113,7 @@ public class SettingsGUI implements Listener {
         Player player = (Player) event.getWhoClicked();
         if (!playerGUIs.containsKey(player)) return;
 
-        String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-            .serialize(event.getView().title());
-        if (!title.equals("FarmCrops Settings")) return;
+        if (!event.getView().getTitle().equals(ChatColor.DARK_GREEN + "FarmCrops Settings")) return;
 
         event.setCancelled(true);
 
