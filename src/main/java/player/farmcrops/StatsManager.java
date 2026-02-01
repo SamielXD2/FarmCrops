@@ -45,6 +45,7 @@ public class StatsManager {
             case "rare":      stats.rareHarvests++;      break;
             case "epic":      stats.epicHarvests++;      break;
             case "legendary": stats.legendaryHarvests++; break;
+            case "mythic":    stats.mythicHarvests++;    break;
         }
 
         // Per-crop tracking
@@ -142,6 +143,7 @@ public class StatsManager {
         stats.rareHarvests = config.getInt("rare-harvests", 0);
         stats.epicHarvests = config.getInt("epic-harvests", 0);
         stats.legendaryHarvests = config.getInt("legendary-harvests", 0);
+        stats.mythicHarvests = config.getInt("mythic-harvests", 0);
         stats.bestDropValue = config.getDouble("best-drop-value", 0.0);
         stats.bestDropTier = config.getString("best-drop-tier", "none");
         stats.bestDropWeight = config.getDouble("best-drop-weight", 0.0);
@@ -176,6 +178,7 @@ public class StatsManager {
         config.set("rare-harvests", stats.rareHarvests);
         config.set("epic-harvests", stats.epicHarvests);
         config.set("legendary-harvests", stats.legendaryHarvests);
+        config.set("mythic-harvests", stats.mythicHarvests);
         config.set("best-drop-value", stats.bestDropValue);
         config.set("best-drop-tier", stats.bestDropTier);
         config.set("best-drop-weight", stats.bestDropWeight);
@@ -221,6 +224,7 @@ public class StatsManager {
         public int rareHarvests = 0;
         public int epicHarvests = 0;
         public int legendaryHarvests = 0;
+        public int mythicHarvests = 0;
         public double bestDropValue = 0.0;
         public String bestDropTier = "none";
         public double bestDropWeight = 0.0;
