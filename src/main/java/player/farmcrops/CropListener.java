@@ -122,4 +122,4 @@ public class CropListener implements Listener {
     private String capitalize(String s) { return s.substring(0,1).toUpperCase() + s.substring(1); }
     private String formatName(Material m) { return m.name().charAt(0) + m.name().substring(1).toLowerCase().replace("_"," "); }
     private String colorize(String s) { return ChatColor.translateAlternateColorCodes('&', s); }
-        }
+}
