@@ -227,9 +227,7 @@ public class SellGUI implements Listener {
 
         if (!playerGUIs.containsKey(player)) return;
 
-        String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-            .serialize(event.getView().title());
-        if (!title.equals("Sell Crops")) return;
+        if (!event.getView().getTitle().equals(ChatColor.GREEN + "Sell Crops")) return;
 
         event.setCancelled(true);
 
@@ -304,9 +302,7 @@ public class SellGUI implements Listener {
 
         if (!playerGUIs.containsKey(player)) return;
 
-        String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-            .serialize(event.getView().title());
-        if (!title.equals("Sell Crops")) return;
+        if (!event.getView().getTitle().equals(ChatColor.GREEN + "Sell Crops")) return;
 
         List<CropEntry> entries = playerCropData.get(player);
         if (entries != null) {
