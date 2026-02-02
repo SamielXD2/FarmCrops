@@ -119,7 +119,8 @@ public class HoloManager {
         
         // CRITICAL FIX: Make it visible only to this player
         hologram.setDefaultVisibleState(false);
-        hologram.showAll(player);
+        hologram.setShowPlayer(player);
+        hologram.show();
         
         activeCursorHolograms.put(player.getUniqueId(), hologram);
     }
@@ -162,7 +163,7 @@ public class HoloManager {
         
         // Add lines
         DHAPI.addHologramLine(hologram, color + "" + ChatColor.BOLD + tier.toUpperCase() + " " + cropName);
-        DHAPI.addHologramLine(hologram, ChatColor.GRAY + weight + " kg " + ChatColor.GOLD + "$" + String.format("%.2f", price));
+        DHAPI.addHologramLine(hologram, ChatColor.GRAY + "" + weight + " kg " + ChatColor.GOLD + "$" + String.format("%.2f", price));
         
         // Make visible only to nearby players who have holograms enabled
         hologram.setDefaultVisibleState(false);
@@ -170,7 +171,8 @@ public class HoloManager {
             PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings()
                 .getPreferences(nearbyPlayer.getUniqueId());
             if (prefs.showHolograms) {
-                hologram.showAll(nearbyPlayer);
+                hologram.setShowPlayer(nearbyPlayer);
+                hologram.show();
             }
         }
         
