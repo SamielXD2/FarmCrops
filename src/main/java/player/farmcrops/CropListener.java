@@ -1,10 +1,8 @@
 package player.farmcrops;
 
 import org.bukkit.*;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -90,35 +88,7 @@ public class CropListener implements Listener {
         Location dropLoc = block.getLocation().add(0.5, 0.5, 0.5);
 
         // Drop the custom crop
-        Item droppedItem = player.getWorld().dropItemNaturally(dropLoc, item);
-        
-        // Apply visual scale to the dropped item entity
-        if (plugin.getConfig().getBoolean("visual.item-scaling", true)) {
-            try {
-                // Try to get GENERIC_SCALE attribute by key (avoids compile-time dependency)
-                NamespacedKey scaleKey = NamespacedKey.minecraft("scale");
-                Attribute scaleAttr = Registry.ATTRIBUTE.get(scaleKey);
-                
-                if (scaleAttr != null && droppedItem.getAttribute(scaleAttr) != null) {
-                    double scaleMin = plugin.getConfig().getDouble("visual.scale-min", 0.75);
-                    double scaleMax = plugin.getConfig().getDouble("visual.scale-max", 1.5);
-                    
-                    // Calculate scale based on weight
-                    double weightRange = maxWeight - minWeight;
-                    double scaleRange = scaleMax - scaleMin;
-                    double normalizedWeight = (weight - minWeight) / weightRange;
-                    double scale = scaleMin + (normalizedWeight * scaleRange);
-                    
-                    // Set the scale attribute on the dropped item entity
-                    droppedItem.getAttribute(scaleAttr).setBaseValue(scale);
-                    
-                    plugin.getLogger().fine("Applied scale " + scale + " to dropped item");
-                }
-            } catch (Exception e) {
-                // GENERIC_SCALE not available in this server version
-                plugin.getLogger().warning("Item scaling not supported in this server version");
-            }
-        }
+        player.getWorld().dropItemNaturally(dropLoc, item);
 
         // Drop seeds
         dropSeeds(block.getType(), dropLoc, player.getWorld());
