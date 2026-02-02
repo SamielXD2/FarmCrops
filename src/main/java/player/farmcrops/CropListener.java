@@ -1,8 +1,6 @@
 package player.farmcrops;
 
 import org.bukkit.*;
-import org.bukkit.attribute.Attribute;
-import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Player;
@@ -10,7 +8,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -19,6 +16,9 @@ import org.bukkit.persistence.PersistentDataType;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * v0.9.0 - Updated with auto-sell and player preferences
+ */
 public class CropListener implements Listener {
 
     private final FarmCrops plugin;
@@ -45,9 +45,8 @@ public class CropListener implements Listener {
 
         Player player = event.getPlayer();
         
-        // v0.8.0: Check if custom crops are enabled
+        // Check if custom crops are enabled
         if (!plugin.getConfig().getBoolean("custom-crops.enabled", true)) {
-            // Custom crops disabled - let vanilla handle everything
             return;
         }
         
@@ -58,6 +57,10 @@ public class CropListener implements Listener {
         if (ageable.getAge() < ageable.getMaximumAge()) {
             return;
         }
+
+        // Get player preferences
+        PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings()
+            .getPreferences(player.getUniqueId());
 
         String tier  = rollTier();
         String color = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
@@ -72,83 +75,83 @@ public class CropListener implements Listener {
         double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
         double price = basePrice * tierMultiplier * weight;
 
-        Material dropMat = getDropMaterial(block.getType());
-        ItemStack item = new ItemStack(dropMat, 1);
-        ItemMeta meta = item.getItemMeta();
-
-        if (meta != null) {
-            PersistentDataContainer pdc = meta.getPersistentDataContainer();
-            pdc.set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
-            pdc.set(TIER_KEY, PersistentDataType.STRING, tier);
-            pdc.set(CROP_KEY, PersistentDataType.STRING, block.getType().name());
-
-            // ============================================
-            // v0.8.0: ITEM SCALING BASED ON WEIGHT
-            // ============================================
-            // Heavier crops appear larger (like Grow a Garden)
-            // Can be toggled in config: visual.item-scaling
-            // ============================================
-            if (plugin.getConfig().getBoolean("visual.item-scaling", true)) {
-                double scaleMin = plugin.getConfig().getDouble("visual.scale-min", 0.75);
-                double scaleMax = plugin.getConfig().getDouble("visual.scale-max", 1.5);
-                
-                // Calculate scale based on weight
-                // weight ranges from minWeight to maxWeight
-                // scale ranges from scaleMin to scaleMax
-                double weightRange = maxWeight - minWeight;
-                double scaleRange = scaleMax - scaleMin;
-                double normalizedWeight = (weight - minWeight) / weightRange;
-                double scale = scaleMin + (normalizedWeight * scaleRange);
-                
-                // Apply item scale attribute
-                NamespacedKey scaleKey = new NamespacedKey("farmcrops", "item_scale");
-                AttributeModifier scaleModifier = new AttributeModifier(
-                    scaleKey,
-                    scale,
-                    AttributeModifier.Operation.ADD_SCALAR,
-                    EquipmentSlotGroup.ANY
-                );
-                meta.addAttributeModifier(Attribute.SCALE, scaleModifier);
-            }
-
-            // Lore
-            List<String> lore = new ArrayList<>();
-            lore.add(colorize(color) + "Tier: " + capitalize(tier));
-            lore.add(colorize("&7Weight: &f" + weight + " kg"));
-            lore.add(colorize("&7Price: &a$" + String.format("%.2f", price)));
-            meta.setLore(lore);
-
-            meta.setDisplayName(colorize(color) + capitalize(tier) + " " + formatName(block.getType()));
-            item.setItemMeta(meta);
-        }
-
         // Cancel vanilla drops
         event.setDropItems(false);
         Location dropLoc = block.getLocation().add(0.5, 0.5, 0.5);
 
-        // Drop the custom crop
-        player.getWorld().dropItemNaturally(dropLoc, item);
+        // ========================================
+        // v0.9.0 NEW: AUTO-SELL FEATURE
+        // ========================================
+        if (prefs.autoSell) {
+            // Give money directly
+            plugin.getEconomy().depositPlayer(player, price);
+            
+            // Play sound if enabled
+            if (prefs.playSounds) {
+                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.5f);
+            }
+            
+            // Show message if enabled
+            if (prefs.showHarvestMessages) {
+                player.sendMessage(colorize(color) + "+" + weight + "kg " + formatName(block.getType()) + 
+                    ChatColor.GREEN + " → " + ChatColor.GOLD + "+$" + String.format("%.2f", price));
+            }
+            
+            // Record stats
+            plugin.getStatsManager().recordHarvest(player, block.getType(), tier, weight, price);
+            
+        } else {
+            // Drop item normally
+            Material dropMat = getDropMaterial(block.getType());
+            ItemStack item = new ItemStack(dropMat, 1);
+            ItemMeta meta = item.getItemMeta();
+
+            if (meta != null) {
+                PersistentDataContainer pdc = meta.getPersistentDataContainer();
+                pdc.set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
+                pdc.set(TIER_KEY, PersistentDataType.STRING, tier);
+                pdc.set(CROP_KEY, PersistentDataType.STRING, block.getType().name());
+
+                List<String> lore = new ArrayList<>();
+                lore.add(colorize(color) + "Tier: " + capitalize(tier));
+                lore.add(colorize("&7Weight: &f" + weight + " kg"));
+                lore.add(colorize("&7Price: &a$" + String.format("%.2f", price)));
+                meta.setLore(lore);
+
+                meta.setDisplayName(colorize(color) + capitalize(tier) + " " + formatName(block.getType()));
+                item.setItemMeta(meta);
+            }
+
+            player.getWorld().dropItemNaturally(dropLoc, item);
+            
+            // Record stats
+            plugin.getStatsManager().recordHarvest(player, block.getType(), tier, weight, price);
+        }
 
         // Drop seeds
         dropSeeds(block.getType(), dropLoc, player.getWorld());
 
-        // Harvest hologram
-        if (plugin.isHoloEnabled() && plugin.getConfig().getBoolean("holograms.harvest-flash", true)) {
+        // Harvest hologram (check player + server settings)
+        if (prefs.showHolograms && 
+            plugin.isHoloEnabled() && 
+            plugin.getConfig().getBoolean("holograms.harvest-flash", true)) {
+            
             plugin.getHoloManager().flashHarvest(
                 dropLoc, player.getName(), tier, weight, price, formatName(block.getType())
             );
         }
 
-        // Particles
-        if (plugin.isHoloEnabled() && plugin.getConfig().getBoolean("holograms.particles", true)) {
+        // Particles (check player + server settings)
+        if (prefs.showParticles && 
+            plugin.getConfig().getBoolean("holograms.particles", true)) {
+            
             spawnHarvestParticles(dropLoc, tier);
         }
-
-        // Record stats
-        plugin.getStatsManager().recordHarvest(player, block.getType(), tier, weight, price);
-
-        plugin.getLogger().info("✓ " + player.getName() + " harvested " + tier.toUpperCase()
-            + " " + formatName(block.getType()) + " (" + weight + "kg) - Worth: $" + String.format("%.2f", price));
+        
+        // Sound (if not auto-sell, and player has sounds enabled)
+        if (!prefs.autoSell && prefs.playSounds) {
+            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f);
+        }
     }
 
     private void dropSeeds(Material cropType, Location location, World world) {
