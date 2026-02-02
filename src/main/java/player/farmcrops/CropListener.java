@@ -1,8 +1,10 @@
 package player.farmcrops;
 
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -72,18 +74,6 @@ public class CropListener implements Listener {
             pdc.set(TIER_KEY, PersistentDataType.STRING, tier);
             pdc.set(CROP_KEY, PersistentDataType.STRING, block.getType().name());
 
-            // ============================================
-            // v0.8.0: ITEM SCALING BASED ON WEIGHT (DISABLED)
-            // ============================================
-            // Note: Attribute.GENERIC_SCALE is not available in Paper 1.21 API
-            // This feature will be re-enabled when Paper adds support for item scaling
-            // For now, weight is shown in lore and affects price
-            // ============================================
-            // TODO: Re-enable when Paper API supports Attribute.GENERIC_SCALE
-            // if (plugin.getConfig().getBoolean("visual.item-scaling", false)) {
-            //     // Item scaling code here
-            // }
-
             // Lore
             List<String> lore = new ArrayList<>();
             lore.add(colorize(color) + "Tier: " + capitalize(tier));
@@ -100,7 +90,24 @@ public class CropListener implements Listener {
         Location dropLoc = block.getLocation().add(0.5, 0.5, 0.5);
 
         // Drop the custom crop
-        player.getWorld().dropItemNaturally(dropLoc, item);
+        Item droppedItem = player.getWorld().dropItemNaturally(dropLoc, item);
+        
+        // Apply visual scale to the dropped item entity
+        if (plugin.getConfig().getBoolean("visual.item-scaling", true) && 
+            droppedItem.getAttribute(Attribute.GENERIC_SCALE) != null) {
+            
+            double scaleMin = plugin.getConfig().getDouble("visual.scale-min", 0.75);
+            double scaleMax = plugin.getConfig().getDouble("visual.scale-max", 1.5);
+            
+            // Calculate scale based on weight
+            double weightRange = maxWeight - minWeight;
+            double scaleRange = scaleMax - scaleMin;
+            double normalizedWeight = (weight - minWeight) / weightRange;
+            double scale = scaleMin + (normalizedWeight * scaleRange);
+            
+            // Set the scale attribute on the dropped item entity
+            droppedItem.getAttribute(Attribute.GENERIC_SCALE).setBaseValue(scale);
+        }
 
         // Drop seeds
         dropSeeds(block.getType(), dropLoc, player.getWorld());
