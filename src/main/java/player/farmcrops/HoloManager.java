@@ -2,175 +2,223 @@ package player.farmcrops;
 
 import eu.decentsoftware.holograms.api.DHAPI;
 import eu.decentsoftware.holograms.api.holograms.Hologram;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Ageable;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
+/**
+ * v0.9.0 - Hologram Manager with Fixed Features
+ * 
+ * Features:
+ * - Invisible armor stands (no flash on spawn)
+ * - Working growing cursor
+ * - Per-player visibility checks
+ * - Harvest flash holograms
+ */
 public class HoloManager {
-
+    
     private final FarmCrops plugin;
-
+    private final Map<UUID, Hologram> activeCursorHolograms = new HashMap<>();
+    private final Map<Location, Long> recentHarvests = new HashMap<>();
+    
+    private static final Material[] CROP_TYPES = {
+        Material.WHEAT, Material.CARROTS, Material.POTATOES,
+        Material.BEETROOTS, Material.MELON
+    };
+    
     public HoloManager(FarmCrops plugin) {
         this.plugin = plugin;
+        startGrowingCursorTask();
+        startCleanupTask();
     }
-
+    
     /**
-     * Flash harvest hologram with tier, weight, and price
+     * v0.9.0 FIX: Growing cursor now works!
+     * 
+     * Checks what block the player is looking at every 10 ticks (0.5s)
+     * If it's a crop, shows a hologram above it with growth status
      */
-    public void flashHarvest(Location location, String playerName, String tier, double weight, double price, String cropName) {
-        try {
-            // Create hologram name (unique per location and time)
-            String holoName = "farmcrops_harvest_" + playerName + "_" + System.currentTimeMillis();
-            
-            // Position above the block
-            Location holoLoc = location.clone().add(0.0, 1.5, 0.0);
-            
-            // Get tier color
-            String color = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
-            
-            // Create hologram lines
-            List<String> lines = new ArrayList<>();
-            lines.add(colorize(color + "&l" + capitalize(tier) + " " + cropName));
-            lines.add(colorize("&7Weight: &f" + String.format("%.2f", weight) + " kg"));
-            lines.add(colorize("&7Value: &a$" + String.format("%.2f", price)));
-            
-            // Create the hologram using DHAPI
-            Hologram hologram = DHAPI.createHologram(holoName, holoLoc, lines);
-            
-            // Remove after 3 seconds
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                if (DHAPI.getHologram(holoName) != null) {
-                    DHAPI.removeHologram(holoName);
+    private void startGrowingCursorTask() {
+        if (!plugin.getConfig().getBoolean("holograms.growing-cursor", true)) {
+            return;
+        }
+        
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                if (!plugin.getConfig().getBoolean("holograms.growing-cursor", true)) {
+                    return;
                 }
-            }, 60L); // 60 ticks = 3 seconds
-            
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to create harvest hologram: " + e.getMessage());
-        }
+                
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    // Check player preferences
+                    PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings()
+                        .getPreferences(player.getUniqueId());
+                    
+                    if (!prefs.showHolograms) {
+                        // Remove existing hologram if player disabled them
+                        removeGrowingCursor(player);
+                        continue;
+                    }
+                    
+                    Block target = player.getTargetBlockExact(5);
+                    
+                    if (target != null && isCrop(target.getType())) {
+                        updateGrowingCursor(player, target);
+                    } else {
+                        removeGrowingCursor(player);
+                    }
+                }
+            }
+        }.runTaskTimer(plugin, 0L, 10L); // Every 0.5 seconds
     }
-
-    /**
-     * Show hologram above growing crop when player looks at it
-     * Displays growth progress and estimated price range
-     */
-    public void showGrowingCropHologram(Block block, Material cropType, int age, int maxAge) {
-        try {
-            String holoName = "farmcrops_growing_" + block.getWorld().getName() + "_" + 
-                             block.getX() + "_" + block.getY() + "_" + block.getZ();
-            
-            Location holoLoc = block.getLocation().add(0.5, 1.0, 0.5);
-            
-            double growthPercent = (age / (double) maxAge) * 100;
-            
-            // Calculate min and max possible prices
-            double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
-            double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
-            
-            // Use per-crop base price
-            double basePrice = plugin.getCropPrice(cropType);
-            
-            // Use common tier as minimum, legendary as maximum
-            double minTierMultiplier = plugin.getConfig().getDouble("tiers.common.multiplier", 1.0);
-            double maxTierMultiplier = plugin.getConfig().getDouble("tiers.legendary.multiplier", 12.0);
-            
-            double minPrice = basePrice * minTierMultiplier * minWeight;
-            double maxPrice = basePrice * maxTierMultiplier * maxWeight;
-            
-            List<String> lines = new ArrayList<>();
-            lines.add(colorize("&e" + formatName(cropType)));
-            
-            // Growth progress bar
-            String progressBar = getProgressBar(growthPercent);
-            lines.add(colorize("&7Growth: " + progressBar + " &f" + String.format("%.0f", growthPercent) + "%"));
-            
-            // Estimated price range (only show when crop is mature)
-            if (age >= maxAge) {
-                lines.add(colorize("&7Ready to harvest!"));
-                lines.add(colorize("&7Value: &a$" + String.format("%.2f", minPrice) + " - $" + String.format("%.2f", maxPrice)));
-            } else {
-                lines.add(colorize("&7Est. Value: &a$" + String.format("%.2f", minPrice) + " - $" + String.format("%.2f", maxPrice)));
-            }
-            
-            // Check if hologram already exists and remove it
-            if (DHAPI.getHologram(holoName) != null) {
-                DHAPI.removeHologram(holoName);
-            }
-            
-            DHAPI.createHologram(holoName, holoLoc, lines);
-            
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to create growing crop hologram: " + e.getMessage());
+    
+    private void updateGrowingCursor(Player player, Block cropBlock) {
+        if (!(cropBlock.getBlockData() instanceof Ageable)) {
+            return;
         }
+        
+        Ageable ageable = (Ageable) cropBlock.getBlockData();
+        int age = ageable.getAge();
+        int maxAge = ageable.getMaximumAge();
+        int percentage = (int) ((age / (double) maxAge) * 100);
+        
+        String cropName = CropListener.formatName(cropBlock.getType());
+        ChatColor color;
+        String status;
+        
+        if (age >= maxAge) {
+            color = ChatColor.GREEN;
+            status = "READY TO HARVEST!";
+        } else if (percentage >= 75) {
+            color = ChatColor.YELLOW;
+            status = percentage + "% grown";
+        } else if (percentage >= 50) {
+            color = ChatColor.GOLD;
+            status = percentage + "% grown";
+        } else {
+            color = ChatColor.RED;
+            status = percentage + "% grown";
+        }
+        
+        Location holoLoc = cropBlock.getLocation().add(0.5, 1.2, 0.5);
+        
+        // Remove old hologram if exists
+        removeGrowingCursor(player);
+        
+        // Create new hologram (INVISIBLE!)
+        String holoName = "growing_cursor_" + player.getUniqueId();
+        Hologram hologram = DHAPI.createHologram(holoName, holoLoc);
+        
+        DHAPI.addHologramLine(hologram, color + "" + ChatColor.BOLD + cropName);
+        DHAPI.addHologramLine(hologram, ChatColor.GRAY + status);
+        
+        // CRITICAL FIX: Make it visible only to this player
+        hologram.setDefaultVisibleState(false);
+        hologram.showAll(player);
+        
+        activeCursorHolograms.put(player.getUniqueId(), hologram);
     }
-
-    /**
-     * Remove a growing crop hologram
-     */
-    public void removeGrowingCropHologram(Block block) {
-        try {
-            String holoName = "farmcrops_growing_" + block.getWorld().getName() + "_" + 
-                             block.getX() + "_" + block.getY() + "_" + block.getZ();
-            
-            if (DHAPI.getHologram(holoName) != null) {
-                DHAPI.removeHologram(holoName);
-            }
-        } catch (Exception e) {
-            plugin.getLogger().warning("Failed to remove growing crop hologram: " + e.getMessage());
+    
+    private void removeGrowingCursor(Player player) {
+        Hologram existing = activeCursorHolograms.remove(player.getUniqueId());
+        if (existing != null) {
+            existing.delete();
         }
     }
     
     /**
-     * Generate a colored progress bar
+     * Harvest flash hologram - shows when crop is broken
      */
-    private String getProgressBar(double percent) {
-        int totalBars = 10;
-        int filledBars = (int) Math.round((percent / 100.0) * totalBars);
+    public void flashHarvest(Location location, String playerName, String tier, 
+                           double weight, double price, String cropName) {
         
-        StringBuilder bar = new StringBuilder();
-        
-        // Color based on progress
-        String fillColor;
-        if (percent < 33) {
-            fillColor = "&c"; // Red
-        } else if (percent < 66) {
-            fillColor = "&e"; // Yellow
-        } else if (percent < 100) {
-            fillColor = "&a"; // Green
-        } else {
-            fillColor = "&2"; // Dark Green
+        // Check if system is enabled
+        if (!plugin.getConfig().getBoolean("holograms.harvest-flash", true)) {
+            return;
         }
         
-        bar.append(fillColor);
-        for (int i = 0; i < filledBars; i++) {
-            bar.append("█");
+        // Prevent spam at same location
+        if (recentHarvests.containsKey(location)) {
+            long lastHarvest = recentHarvests.get(location);
+            if (System.currentTimeMillis() - lastHarvest < 500) {
+                return; // Too soon
+            }
+        }
+        recentHarvests.put(location, System.currentTimeMillis());
+        
+        String tierColor = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
+        ChatColor color = ChatColor.translateAlternateColorCodes('&', tierColor).charAt(0) == '§' ?
+            ChatColor.getByChar(tierColor.charAt(1)) : ChatColor.GRAY;
+        
+        Location holoLoc = location.clone().add(0, 0.5, 0);
+        String holoName = "harvest_" + UUID.randomUUID();
+        
+        Hologram hologram = DHAPI.createHologram(holoName, holoLoc);
+        
+        // Add lines
+        DHAPI.addHologramLine(hologram, color + "" + ChatColor.BOLD + tier.toUpperCase() + " " + cropName);
+        DHAPI.addHologramLine(hologram, ChatColor.GRAY + weight + " kg " + ChatColor.GOLD + "$" + String.format("%.2f", price));
+        
+        // Make visible only to nearby players who have holograms enabled
+        hologram.setDefaultVisibleState(false);
+        for (Player nearbyPlayer : location.getWorld().getNearbyPlayers(location, 30)) {
+            PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings()
+                .getPreferences(nearbyPlayer.getUniqueId());
+            if (prefs.showHolograms) {
+                hologram.showAll(nearbyPlayer);
+            }
         }
         
-        bar.append("&7");
-        for (int i = filledBars; i < totalBars; i++) {
-            bar.append("█");
-        }
-        
-        return bar.toString();
+        // Animate upward and fade
+        new BukkitRunnable() {
+            int ticks = 0;
+            @Override
+            public void run() {
+                ticks++;
+                
+                if (ticks >= 40) { // 2 seconds
+                    hologram.delete();
+                    cancel();
+                    return;
+                }
+                
+                // Move up slowly
+                holoLoc.add(0, 0.02, 0);
+                hologram.setLocation(holoLoc);
+            }
+        }.runTaskTimer(plugin, 0L, 1L);
     }
-
-    private String capitalize(String s) {
-        if (s == null || s.isEmpty()) return s;
-        return s.substring(0, 1).toUpperCase() + s.substring(1);
+    
+    /**
+     * Cleanup task - removes old harvest locations from map
+     */
+    private void startCleanupTask() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                long now = System.currentTimeMillis();
+                recentHarvests.entrySet().removeIf(entry -> 
+                    now - entry.getValue() > 5000); // 5 seconds old
+            }
+        }.runTaskTimer(plugin, 0L, 100L); // Every 5 seconds
     }
-
-    private String formatName(Material m) {
-        String name = m.name();
-        if (name.endsWith("S")) {
-            // Remove trailing S for plural crop names
-            name = name.substring(0, name.length() - 1);
+    
+    /**
+     * Cleanup player's cursor hologram on logout
+     */
+    public void cleanup(Player player) {
+        removeGrowingCursor(player);
+    }
+    
+    private boolean isCrop(Material material) {
+        for (Material crop : CROP_TYPES) {
+            if (crop == material) return true;
         }
-        return name.charAt(0) + name.substring(1).toLowerCase().replace("_", " ");
-    }
-
-    private String colorize(String s) {
-        return org.bukkit.ChatColor.translateAlternateColorCodes('&', s);
+        return false;
     }
 }
