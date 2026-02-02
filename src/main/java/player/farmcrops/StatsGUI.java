@@ -66,7 +66,7 @@ public class StatsGUI implements Listener {
                 "",
                 ChatColor.GOLD + "💎 $" + String.format("%.2f", stats.bestDropValue),
                 ChatColor.GRAY + capitalize(stats.bestDropTier) + " " + bestCrop,
-                ChatColor.GRAY + stats.bestDropWeight + " kg"));
+                ChatColor.GRAY + "" + stats.bestDropWeight + " kg"));
         }
 
         // Heaviest Crop
