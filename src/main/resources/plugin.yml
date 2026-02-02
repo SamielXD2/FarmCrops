@@ -1,5 +1,5 @@
 name: FarmCrops
-version: '0.8.0'
+version: '0.9.0'
 description: Weight-based crop economy with GUI hub
 main: player.farmcrops.FarmCrops
 api-version: '1.21'
