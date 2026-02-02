@@ -1,6 +1,8 @@
 package player.farmcrops;
 
 import org.bukkit.*;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Player;
@@ -8,6 +10,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.inventory.EquipmentSlotGroup;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -41,6 +44,13 @@ public class CropListener implements Listener {
         if (!isTrackedCrop(block.getType())) return;
 
         Player player = event.getPlayer();
+        
+        // v0.8.0: Check if custom crops are enabled
+        if (!plugin.getConfig().getBoolean("custom-crops.enabled", true)) {
+            // Custom crops disabled - let vanilla handle everything
+            return;
+        }
+        
         if (!player.hasPermission("farmcrops.harvest")) return;
 
         if (!(block.getBlockData() instanceof Ageable)) return;
@@ -71,6 +81,35 @@ public class CropListener implements Listener {
             pdc.set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
             pdc.set(TIER_KEY, PersistentDataType.STRING, tier);
             pdc.set(CROP_KEY, PersistentDataType.STRING, block.getType().name());
+
+            // ============================================
+            // v0.8.0: ITEM SCALING BASED ON WEIGHT
+            // ============================================
+            // Heavier crops appear larger (like Grow a Garden)
+            // Can be toggled in config: visual.item-scaling
+            // ============================================
+            if (plugin.getConfig().getBoolean("visual.item-scaling", true)) {
+                double scaleMin = plugin.getConfig().getDouble("visual.scale-min", 0.75);
+                double scaleMax = plugin.getConfig().getDouble("visual.scale-max", 1.5);
+                
+                // Calculate scale based on weight
+                // weight ranges from minWeight to maxWeight
+                // scale ranges from scaleMin to scaleMax
+                double weightRange = maxWeight - minWeight;
+                double scaleRange = scaleMax - scaleMin;
+                double normalizedWeight = (weight - minWeight) / weightRange;
+                double scale = scaleMin + (normalizedWeight * scaleRange);
+                
+                // Apply item scale attribute
+                NamespacedKey scaleKey = new NamespacedKey("farmcrops", "item_scale");
+                AttributeModifier scaleModifier = new AttributeModifier(
+                    scaleKey,
+                    scale,
+                    AttributeModifier.Operation.ADD_SCALAR,
+                    EquipmentSlotGroup.ANY
+                );
+                meta.addAttributeModifier(Attribute.GENERIC_SCALE, scaleModifier);
+            }
 
             // Lore
             List<String> lore = new ArrayList<>();
