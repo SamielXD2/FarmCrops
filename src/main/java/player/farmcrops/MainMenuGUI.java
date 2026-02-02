@@ -62,11 +62,19 @@ public class MainMenuGUI implements Listener {
             "",
             ChatColor.YELLOW + "Click to view"));
 
-        // Settings button (admin only)
+        // My Settings button (v0.9.0)
+        gui.setItem(20, createItem(Material.COMPARATOR,
+            ChatColor.AQUA + "" + ChatColor.BOLD + "⚙ My Settings",
+            ChatColor.GRAY + "Personal preferences",
+            ChatColor.GRAY + "Auto-sell, holograms, particles...",
+            "",
+            ChatColor.YELLOW + "Click to customize"));
+
+        // Admin Settings button (admin only)
         if (player.hasPermission("farmcrops.settings")) {
             gui.setItem(22, createItem(Material.REDSTONE,
-                ChatColor.RED + "" + ChatColor.BOLD + "⚙ Settings",
-                ChatColor.GRAY + "Admin configuration panel",
+                ChatColor.RED + "" + ChatColor.BOLD + "⚙ Admin Settings",
+                ChatColor.GRAY + "Server configuration",
                 ChatColor.GRAY + "Toggle features on/off",
                 "",
                 ChatColor.YELLOW + "Click to open",
@@ -123,7 +131,13 @@ public class MainMenuGUI implements Listener {
                 plugin.getTopGUI().openGUI(player, 1);
                 break;
 
-            case 22: // Settings (admin only)
+            case 20: // My Settings (v0.9.0)
+                player.closeInventory();
+                playerGUIs.remove(player);
+                plugin.getPlayerSettingsGUI().openGUI(player);
+                break;
+
+            case 22: // Admin Settings
                 if (player.hasPermission("farmcrops.settings")) {
                     player.closeInventory();
                     playerGUIs.remove(player);
