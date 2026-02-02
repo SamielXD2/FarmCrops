@@ -52,3 +52,4 @@ jobs:
           name: FarmCrops-Plugin
           path: target/*.jar
           retention-days: 7
+
