@@ -20,6 +20,8 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private MainMenuGUI mainMenuGUI;
     private StatsGUI statsGUI;
     private TopGUI topGUI;
+    private PlayerSettings playerSettings;
+    private PlayerSettingsGUI playerSettingsGUI;
     private boolean holoEnabled = false;
 
     @Override
@@ -28,7 +30,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
 
         getLogger().info("========================================");
         getLogger().info("========================================");
-        getLogger().info("       FARMCROPS v0.8.0");
+        getLogger().info("       FARMCROPS v0.9.0");
         getLogger().info("  Weight-Based Crop Economy System");
         getLogger().info("========================================");
         getLogger().info("========================================");
@@ -60,6 +62,11 @@ public class FarmCrops extends JavaPlugin implements Listener {
         // Stats
         statsManager = new StatsManager(this);
         getLogger().info("✓ Stats system initialized");
+        getLogger().info("");
+
+        // Player Settings (v0.9.0)
+        playerSettings = new PlayerSettings(this);
+        getLogger().info("✓ Player settings system initialized");
         getLogger().info("");
 
         // Event listeners
@@ -97,6 +104,12 @@ public class FarmCrops extends JavaPlugin implements Listener {
         topGUI = new TopGUI(this);
         getServer().getPluginManager().registerEvents(topGUI, this);
         getLogger().info("✓ Top GUI initialized");
+        getLogger().info("");
+
+        // Player Settings GUI (v0.9.0)
+        playerSettingsGUI = new PlayerSettingsGUI(this);
+        getServer().getPluginManager().registerEvents(playerSettingsGUI, this);
+        getLogger().info("✓ Player Settings GUI initialized");
         getLogger().info("");
 
         // Commands
@@ -157,7 +170,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
         }
 
         getLogger().info("========================================");
-        getLogger().info("  FarmCrops v0.8.0 shutting down...");
+        getLogger().info("  FarmCrops v0.9.0 shutting down...");
         getLogger().info("========================================");
     }
 
@@ -217,4 +230,6 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public MainMenuGUI getMainMenuGUI()        { return mainMenuGUI; }
     public StatsGUI getStatsGUI()              { return statsGUI; }
     public TopGUI getTopGUI()                  { return topGUI; }
+    public PlayerSettings getPlayerSettings()  { return playerSettings; }
+    public PlayerSettingsGUI getPlayerSettingsGUI() { return playerSettingsGUI; }
 }
