@@ -112,7 +112,7 @@ public class PlayerSettingsGUI implements Listener {
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName((enabled ? ChatColor.GREEN : ChatColor.RED) + 
+            meta.setDisplayName((enabled ? ChatColor.GREEN : ChatColor.RED) + "" + 
                 ChatColor.BOLD + name + " " +
                 (enabled ? ChatColor.GREEN + "ON" : ChatColor.RED + "OFF"));
             
