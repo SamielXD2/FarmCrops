@@ -1,0 +1,100 @@
+name: FarmCrops
+version: '0.8.0'
+description: Weight-based crop economy with GUI hub
+main: player.farmcrops.FarmCrops
+api-version: '1.21'
+author: Player
+depend:
+  - Vault
+softdepend:
+  - DecentHolograms
+  - PlaceholderAPI
+
+commands:
+  farm:
+    description: Opens the main menu GUI
+    usage: /farm
+    aliases: [farmcrops, fc]
+    permission: farmcrops.menu
+    permission-message: You don't have permission to use FarmCrops.
+
+  sellcrops:
+    description: Opens sell GUI to sell custom crops
+    usage: /<command>
+    aliases: [fcs, sps, sellproduce]
+    permission: farmcrops.sell
+    permission-message: You don't have permission to sell crops.
+
+  farmstats:
+    description: View your farming statistics (now opens GUI)
+    usage: /farmstats [player]
+    aliases: [fstats, fs]
+    permission: farmcrops.stats
+    permission-message: You don't have permission to view stats.
+
+  farmtop:
+    description: View the top farmers leaderboard (now opens GUI)
+    usage: /farmtop [page]
+    aliases: [ftop]
+    permission: farmcrops.top
+    permission-message: You don't have permission to view the leaderboard.
+
+  farmsettings:
+    description: Open the admin settings GUI
+    usage: /farmsettings
+    aliases: [fsettings]
+    permission: farmcrops.settings
+    permission-message: You don't have permission to access settings.
+
+  farmreload:
+    description: Reload FarmCrops configuration
+    usage: /farmreload
+    aliases: [freload]
+    permission: farmcrops.reload
+    permission-message: You don't have permission to reload FarmCrops.
+
+permissions:
+  farmcrops.menu:
+    description: "Open the main menu GUI"
+    default: true
+
+  farmcrops.sell:
+    description: "Allows the player to open the sell GUI"
+    default: true
+
+  farmcrops.harvest:
+    description: "Allows the player to harvest crops and receive custom drops"
+    default: true
+
+  farmcrops.stats:
+    description: "Allows the player to view their own stats"
+    default: true
+
+  farmcrops.stats.others:
+    description: "Allows viewing other players' stats"
+    default: op
+
+  farmcrops.top:
+    description: "Allows viewing the leaderboard"
+    default: true
+
+  farmcrops.settings:
+    description: "Allows opening the admin settings GUI"
+    default: op
+
+  farmcrops.reload:
+    description: "Allows reloading the plugin config"
+    default: op
+
+  farmcrops.admin:
+    description: "Full admin access — grants all FarmCrops permissions"
+    default: op
+    children:
+      farmcrops.menu: true
+      farmcrops.sell: true
+      farmcrops.harvest: true
+      farmcrops.stats: true
+      farmcrops.stats.others: true
+      farmcrops.top: true
+      farmcrops.reload: true
+      farmcrops.settings: true
