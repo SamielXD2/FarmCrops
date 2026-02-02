@@ -1,5 +1,5 @@
 # ============================================
-# FarmCrops v0.6.0 - Configuration
+# FarmCrops v0.8.0 - Configuration
 # ============================================
 # Price formula:  basePrice * tierMultiplier * weight
 # Example: A 7.5kg Rare wheat = 8.0 * 2.5 * 7.5 = $150.00
@@ -12,9 +12,6 @@ weight:
 # ============================================
 # Per-Crop Pricing
 # ============================================
-# Each crop can have its own base price.
-# If a crop is not listed here, it falls back to 'default'.
-# ============================================
 prices:
   default: 10.0
   wheat: 8.0
@@ -23,6 +20,9 @@ prices:
   beetroot: 15.0
   melon: 18.0
 
+# ============================================
+# Tier System
+# ============================================
 tiers:
   common:
     chance: 70
@@ -30,7 +30,7 @@ tiers:
     color: "&7"
   
   rare:
-    chance: 20
+    chance: 19
     multiplier: 2.5
     color: "&b"
   
@@ -43,12 +43,23 @@ tiers:
     chance: 3
     multiplier: 12.0
     color: "&6"
+  
+  mythic:
+    chance: 1
+    multiplier: 25.0
+    color: "&c"
+
+# ============================================
+# Custom Crops Toggle (v0.8.0)
+# ============================================
+# When disabled, crops drop vanilla items instead of custom ones
+# This allows admins to temporarily disable the plugin without uninstalling
+# ============================================
+custom-crops:
+  enabled: true
 
 # ============================================
 # Seed Drop Settings
-# ============================================
-# Controls whether seeds drop when a crop is harvested.
-# Each crop has its own drop chance (0-100).
 # ============================================
 seeds:
   enabled: true
