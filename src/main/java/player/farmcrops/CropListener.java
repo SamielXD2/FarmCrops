@@ -108,7 +108,7 @@ public class CropListener implements Listener {
                     AttributeModifier.Operation.ADD_SCALAR,
                     EquipmentSlotGroup.ANY
                 );
-                meta.addAttributeModifier(Attribute.GENERIC_SCALE, scaleModifier);
+                meta.addAttributeModifier(Attribute.SCALE, scaleModifier);
             }
 
             // Lore
