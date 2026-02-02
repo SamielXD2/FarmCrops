@@ -17,6 +17,9 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private HoloManager holoManager;
     private StatsManager statsManager;
     private SettingsGUI settingsGUI;
+    private MainMenuGUI mainMenuGUI;
+    private StatsGUI statsGUI;
+    private TopGUI topGUI;
     private boolean holoEnabled = false;
 
     @Override
@@ -25,7 +28,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
 
         getLogger().info("========================================");
         getLogger().info("========================================");
-        getLogger().info("       FARMCROPS v0.6.0");
+        getLogger().info("       FARMCROPS v0.8.0");
         getLogger().info("  Weight-Based Crop Economy System");
         getLogger().info("========================================");
         getLogger().info("========================================");
@@ -78,13 +81,32 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("✓ Settings GUI initialized");
         getLogger().info("");
 
+        // Main Menu GUI (v0.8.0)
+        mainMenuGUI = new MainMenuGUI(this);
+        getServer().getPluginManager().registerEvents(mainMenuGUI, this);
+        getLogger().info("✓ Main Menu GUI initialized");
+        getLogger().info("");
+
+        // Stats GUI (v0.8.0)
+        statsGUI = new StatsGUI(this);
+        getServer().getPluginManager().registerEvents(statsGUI, this);
+        getLogger().info("✓ Stats GUI initialized");
+        getLogger().info("");
+
+        // Top GUI (v0.8.0)
+        topGUI = new TopGUI(this);
+        getServer().getPluginManager().registerEvents(topGUI, this);
+        getLogger().info("✓ Top GUI initialized");
+        getLogger().info("");
+
         // Commands
         getCommand("sellcrops").setExecutor(new SellCommand(this));
         getCommand("farmstats").setExecutor(new StatsCommand(this));
         getCommand("farmtop").setExecutor(new TopCommand(this));
         getCommand("farmsettings").setExecutor(new SettingsCommand(this));
         getCommand("farmreload").setExecutor(new ReloadCommand(this));
-        getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload");
+        getCommand("farm").setExecutor(new FarmCommand(this));
+        getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm");
         getLogger().info("");
 
         // PlaceholderAPI
@@ -118,11 +140,12 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("  - farmcrops.top      — view leaderboard");
         getLogger().info("  - farmcrops.settings — admin settings GUI");
         getLogger().info("  - farmcrops.reload   — reload config");
+        getLogger().info("  - farmcrops.menu     — main menu GUI");
         getLogger().info("  - farmcrops.admin    — grants all above");
         getLogger().info("");
 
         getLogger().info("========================================");
-        getLogger().info("  ✓✓✓ FARMCROPS v0.6.0 ENABLED ✓✓✓");
+        getLogger().info("  ✓✓✓ FARMCROPS v0.8.0 ENABLED ✓✓✓");
         getLogger().info("========================================");
     }
 
@@ -134,7 +157,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
         }
 
         getLogger().info("========================================");
-        getLogger().info("  FarmCrops v0.6.0 shutting down...");
+        getLogger().info("  FarmCrops v0.8.0 shutting down...");
         getLogger().info("========================================");
     }
 
@@ -190,5 +213,8 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public boolean isHoloEnabled()             { return holoEnabled; }
     public HoloManager getHoloManager()        { return holoManager; }
     public StatsManager getStatsManager()      { return statsManager; }
-    public SettingsGUI getSettingsGUI()         { return settingsGUI; }
+    public SettingsGUI getSettingsGUI()        { return settingsGUI; }
+    public MainMenuGUI getMainMenuGUI()        { return mainMenuGUI; }
+    public StatsGUI getStatsGUI()              { return statsGUI; }
+    public TopGUI getTopGUI()                  { return topGUI; }
 }
