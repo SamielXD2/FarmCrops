@@ -120,7 +120,6 @@ public class HoloManager {
         // CRITICAL FIX: Make it visible only to this player
         hologram.setDefaultVisibleState(false);
         hologram.setShowPlayer(player);
-        hologram.show();
         
         activeCursorHolograms.put(player.getUniqueId(), hologram);
     }
@@ -172,7 +171,6 @@ public class HoloManager {
                 .getPreferences(nearbyPlayer.getUniqueId());
             if (prefs.showHolograms) {
                 hologram.setShowPlayer(nearbyPlayer);
-                hologram.show();
             }
         }
         
