@@ -152,18 +152,15 @@ public class CropListener implements Listener {
         // Drop seeds
         dropSeeds(block.getType(), dropLoc, player.getWorld());
 
-        // Harvest hologram disabled (HoloManager removed - using CropPreviewManager for right-click only)
-        // TODO: Implement harvest flash with CropPreviewManager if needed
-        /*
+        // Harvest hologram flash
         if (prefs.showHolograms && 
             plugin.isHoloEnabled() && 
             plugin.getConfig().getBoolean("holograms.harvest-flash", true)) {
             
-            plugin.getHoloManager().flashHarvest(
+            plugin.getHarvestHologramManager().flashHarvest(
                 dropLoc, player.getName(), tier, weight, price, formatName(block.getType())
             );
         }
-        */
 
         // Particles (check player + server settings)
         if (prefs.showParticles && 
