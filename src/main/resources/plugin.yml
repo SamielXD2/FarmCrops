@@ -47,6 +47,11 @@ commands:
   farm:
     description: Open the main FarmCrops menu
     usage: /farm
+    
+  achievements:
+    description: View your achievements
+    usage: /achievements
+    aliases: [ach, achieve]
 
 permissions:
   farmcrops.*:
