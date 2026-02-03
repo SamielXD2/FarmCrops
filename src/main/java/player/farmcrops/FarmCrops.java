@@ -16,7 +16,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private static FarmCrops instance;
     private Economy economy;
     private SellGUI sellGUI;
-    private HarvestHologramManager harvestHologramManager;
+    private HoloManager holoManager;
     private StatsManager statsManager;
     private SettingsGUI settingsGUI;
     private MainMenuGUI mainMenuGUI;
@@ -183,17 +183,17 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("  PlaceholderAPI integration: Disabled");
         getLogger().info("");
 
-        // FancyHolograms
-        if (Bukkit.getPluginManager().getPlugin("FancyHolograms") != null) {
+        // DecentHolograms
+        if (Bukkit.getPluginManager().getPlugin("DecentHolograms") != null) {
             cropPreviewManager = new CropPreviewManager(this);
-            harvestHologramManager = new HarvestHologramManager(this);
+            holoManager = new HoloManager(this);
             Bukkit.getPluginManager().registerEvents(cropPreviewManager, this);
             holoEnabled = true;
-            getLogger().info("✓ FancyHolograms integration active");
+            getLogger().info("✓ DecentHolograms integration active");
             getLogger().info("  - Right-click preview: " + getConfig().getBoolean("holograms.right-click-preview"));
             getLogger().info("  - Preview duration: " + getConfig().getInt("holograms.preview-duration") + "s");
         } else {
-            getLogger().info("  FancyHolograms not found — hologram support disabled");
+            getLogger().info("  DecentHolograms not found — hologram support disabled");
         }
         getLogger().info("");
 
@@ -325,7 +325,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public PlayerSettings getPlayerSettings()  { return playerSettings; }
     public PlayerSettingsGUI getPlayerSettingsGUI() { return playerSettingsGUI; }
     public CropPreviewManager getCropPreviewManager() { return cropPreviewManager; }
-    public HarvestHologramManager getHarvestHologramManager() { return harvestHologramManager; }
+    public HoloManager getHoloManager()        { return holoManager; }
     
     // v1.0.0 Features
     public AchievementManager getAchievementManager() { return achievementManager; }
