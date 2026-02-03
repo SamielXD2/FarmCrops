@@ -126,7 +126,9 @@ public class CropListener implements Listener {
                 lore.add(colorize("&7Price: &a$" + String.format("%.2f", price)));
                 meta.setLore(lore);
 
-                meta.setDisplayName(colorize(color) + capitalize(tier) + " " + formatName(block.getType()));
+                // Apply tier color to the ENTIRE name (tier + crop name)
+                String fullName = capitalize(tier) + " " + formatName(block.getType());
+                meta.setDisplayName(colorize(color) + fullName);
                 item.setItemMeta(meta);
             }
 
