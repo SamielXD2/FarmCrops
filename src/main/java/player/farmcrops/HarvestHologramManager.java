@@ -6,6 +6,7 @@ import de.oliver.fancyholograms.api.hologram.Hologram;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
+import org.bukkit.entity.Player;
 
 import java.util.List;
 
@@ -25,7 +26,7 @@ public class HarvestHologramManager {
     /**
      * Shows a temporary hologram when a crop is harvested
      */
-    public void flashHarvest(Location loc, String playerName, String tier, double weight, double price, String cropName) {
+    public void flashHarvest(Location loc, Player player, String tier, double weight, double price, String cropName) {
         if (fancyAPI == null) return;
         
         // Get tier color
@@ -38,7 +39,7 @@ public class HarvestHologramManager {
         
         // Create hologram data
         TextHologramData data = new TextHologramData(
-            "harvest_" + System.currentTimeMillis() + "_" + playerName,
+            "harvest_" + System.currentTimeMillis() + "_" + player.getUniqueId(),
             loc.clone().add(0.5, 1.5, 0.5) // Center and raise above crop
         );
         
@@ -50,7 +51,7 @@ public class HarvestHologramManager {
         Hologram hologram = fancyAPI.getHologramManager().create(data);
         if (hologram != null) {
             hologram.createHologram();
-            hologram.showHologram(Bukkit.getPlayer(playerName));
+            hologram.showHologram(player);
             
             // Remove after 2 seconds
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
