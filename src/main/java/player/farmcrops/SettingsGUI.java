@@ -113,7 +113,7 @@ public class SettingsGUI implements Listener {
         if (!playerGUIs.containsKey(player)) return;
 
         String title = InventoryUtil.getTitle(event.getView());
-        if (!title.equals("FarmCrops Settings")) return;
+        if (!title.equals(ChatColor.DARK_GREEN + "FarmCrops Settings")) return;
 
         event.setCancelled(true);
 
