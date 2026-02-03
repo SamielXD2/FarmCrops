@@ -16,7 +16,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private static FarmCrops instance;
     private Economy economy;
     private SellGUI sellGUI;
-    // HoloManager removed - using CropPreviewManager with FancyHolograms
+    private HarvestHologramManager harvestHologramManager;
     private StatsManager statsManager;
     private SettingsGUI settingsGUI;
     private MainMenuGUI mainMenuGUI;
@@ -184,6 +184,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
         // FancyHolograms
         if (Bukkit.getPluginManager().getPlugin("FancyHolograms") != null) {
             cropPreviewManager = new CropPreviewManager(this);
+            harvestHologramManager = new HarvestHologramManager(this);
             Bukkit.getPluginManager().registerEvents(cropPreviewManager, this);
             holoEnabled = true;
             getLogger().info("✓ FancyHolograms integration active");
@@ -322,6 +323,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public PlayerSettings getPlayerSettings()  { return playerSettings; }
     public PlayerSettingsGUI getPlayerSettingsGUI() { return playerSettingsGUI; }
     public CropPreviewManager getCropPreviewManager() { return cropPreviewManager; }
+    public HarvestHologramManager getHarvestHologramManager() { return harvestHologramManager; }
     
     // v1.0.0 Features
     public AchievementManager getAchievementManager() { return achievementManager; }
