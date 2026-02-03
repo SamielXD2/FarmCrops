@@ -63,6 +63,13 @@ permissions:
       farmcrops.menu: true
       farmcrops.autosell.use: true
       farmcrops.preview: true
+      farmcrops.achievements: true
+      farmcrops.achievements.claim: true
+      farmcrops.titles.use: true
+      farmcrops.titles.equip: true
+      farmcrops.dailytasks: true
+      farmcrops.collections: true
+      farmcrops.bypass.cooldown: true
 
   farmcrops.admin:
     description: Admin commands (reload, backup)
@@ -107,3 +114,39 @@ permissions:
   farmcrops.preview:
     description: See crop growth previews when looking at crops
     default: true
+
+  farmcrops.achievements:
+    description: View achievements menu
+    default: true
+
+  farmcrops.achievements.claim:
+    description: Claim achievement rewards
+    default: true
+
+  farmcrops.titles.use:
+    description: View titles menu
+    default: true
+
+  farmcrops.titles.equip:
+    description: Equip and unequip titles
+    default: true
+
+  farmcrops.dailytasks:
+    description: Access daily tasks
+    default: true
+
+  farmcrops.collections:
+    description: View crop collections
+    default: true
+
+  farmcrops.bypass.cooldown:
+    description: Bypass action cooldowns
+    default: op
+
+  farmcrops.vip:
+    description: VIP perks (bonus multipliers, etc)
+    default: false
+
+  farmcrops.premium:
+    description: Premium features access
+    default: false
