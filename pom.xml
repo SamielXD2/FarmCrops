@@ -141,6 +141,25 @@
             </properties>
             <build>
                 <finalName>FarmCrops-Lite-${plugin.version}</finalName>
+                <plugins>
+                    <!-- Exclude Premium-only classes in Lite build -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.11.0</version>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/AchievementManager.java</exclude>
+                                <exclude>**/AchievementGUI.java</exclude>
+                                <exclude>**/AchievementCommand.java</exclude>
+                                <exclude>**/DailyTaskManager.java</exclude>
+                                <exclude>**/CollectionManager.java</exclude>
+                                <exclude>**/TitleManager.java</exclude>
+                                <exclude>**/TitleGUI.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
     </profiles>
