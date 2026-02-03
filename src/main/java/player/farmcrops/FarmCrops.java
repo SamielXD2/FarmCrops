@@ -9,6 +9,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.UUID;
+
 public class FarmCrops extends JavaPlugin implements Listener {
 
     private static FarmCrops instance;
