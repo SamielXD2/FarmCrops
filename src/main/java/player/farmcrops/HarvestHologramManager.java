@@ -12,52 +12,119 @@ import java.util.List;
 
 /**
  * Manages temporary harvest flash holograms using FancyHolograms
+ * Falls back to SimpleHologram if FancyHolograms is unavailable
  */
 public class HarvestHologramManager {
     
     private final FarmCrops plugin;
     private final FancyHologramsPlugin fancyAPI;
+    private final boolean useFancyHolograms;
     
     public HarvestHologramManager(FarmCrops plugin) {
         this.plugin = plugin;
         this.fancyAPI = (FancyHologramsPlugin) Bukkit.getPluginManager().getPlugin("FancyHolograms");
+        this.useFancyHolograms = (fancyAPI != null);
+        
+        if (useFancyHolograms) {
+            plugin.getLogger().info("✓ Using FancyHolograms for harvest holograms");
+        } else {
+            plugin.getLogger().info("✓ Using SimpleHologram (armor stands) for harvest holograms");
+        }
     }
     
     /**
      * Shows a temporary hologram when a crop is harvested
      */
     public void flashHarvest(Location loc, Player player, String tier, double weight, double price, String cropName) {
-        if (fancyAPI == null) return;
+        if (useFancyHolograms) {
+            flashHarvestFancy(loc, player, tier, weight, price, cropName);
+        } else {
+            flashHarvestSimple(loc, player, tier, weight, price, cropName);
+        }
+    }
+    
+    /**
+     * FancyHolograms implementation
+     */
+    private void flashHarvestFancy(Location loc, Player player, String tier, double weight, double price, String cropName) {
+        if (fancyAPI == null) {
+            plugin.getLogger().warning("FancyHologramsPlugin is null! Falling back to simple hologram.");
+            flashHarvestSimple(loc, player, tier, weight, price, cropName);
+            return;
+        }
         
-        // Get tier color
-        String tierColor = getTierColor(tier);
-        
-        // Create hologram lines
-        String line1 = tierColor + "✦ " + tier + " " + cropName + " " + tierColor + "✦";
-        String line2 = ChatColor.GRAY + "Weight: " + ChatColor.WHITE + String.format("%.2f", weight) + "kg";
-        String line3 = ChatColor.GOLD + "+$" + String.format("%.2f", price);
-        
-        // Create hologram data
-        TextHologramData data = new TextHologramData(
-            "harvest_" + System.currentTimeMillis() + "_" + player.getUniqueId(),
-            loc.clone().add(0.5, 1.5, 0.5) // Center and raise above crop
-        );
-        
-        data.setText(List.of(line1, line2, line3));
-        data.setPersistent(false);
-        data.setVisibilityDistance(16);
-        
-        // Create and show hologram
-        Hologram hologram = fancyAPI.getHologramManager().create(data);
-        if (hologram != null) {
-            hologram.createHologram();
-            hologram.showHologram(player);
+        try {
+            // Get tier color
+            String tierColor = getTierColor(tier);
             
-            // Remove after 2 seconds
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                hologram.deleteHologram();
-                fancyAPI.getHologramManager().removeHologram(hologram);
-            }, 40L); // 2 seconds
+            // Create hologram lines
+            String line1 = tierColor + "✦ " + tier.toUpperCase() + " " + cropName + " " + tierColor + "✦";
+            String line2 = ChatColor.GRAY + "Weight: " + ChatColor.WHITE + String.format("%.2f", weight) + "kg";
+            String line3 = ChatColor.GOLD + "+$" + String.format("%.2f", price);
+            
+            // Create hologram data
+            Location holoLoc = loc.clone().add(0.5, 1.5, 0.5); // Center and raise above crop
+            TextHologramData data = new TextHologramData(
+                "harvest_" + System.currentTimeMillis() + "_" + player.getUniqueId(),
+                holoLoc
+            );
+            
+            data.setText(List.of(line1, line2, line3));
+            data.setPersistent(false);
+            data.setVisibilityDistance(16);
+            
+            // Create and show hologram
+            Hologram hologram = fancyAPI.getHologramManager().create(data);
+            if (hologram != null) {
+                hologram.createHologram();
+                hologram.showHologram(player);
+                
+                plugin.getLogger().info("Created harvest hologram for " + player.getName() + " at " + holoLoc);
+                
+                // Remove after 2 seconds
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    try {
+                        hologram.deleteHologram();
+                        fancyAPI.getHologramManager().removeHologram(hologram);
+                    } catch (Exception e) {
+                        plugin.getLogger().warning("Failed to remove hologram: " + e.getMessage());
+                    }
+                }, 40L); // 2 seconds
+            } else {
+                plugin.getLogger().warning("Failed to create FancyHologram - falling back to simple hologram!");
+                flashHarvestSimple(loc, player, tier, weight, price, cropName);
+            }
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error creating FancyHologram: " + e.getMessage());
+            e.printStackTrace();
+            flashHarvestSimple(loc, player, tier, weight, price, cropName);
+        }
+    }
+    
+    /**
+     * SimpleHologram (armor stand) implementation as fallback
+     */
+    private void flashHarvestSimple(Location loc, Player player, String tier, double weight, double price, String cropName) {
+        try {
+            // Get tier color
+            String tierColor = getTierColor(tier);
+            
+            // Create hologram at raised location
+            Location holoLoc = loc.clone().add(0.5, 1.5, 0.5);
+            SimpleHologram hologram = new SimpleHologram(plugin, holoLoc);
+            
+            // Add lines
+            hologram.addLine(tierColor + "✦ " + tier.toUpperCase() + " " + cropName + " " + tierColor + "✦");
+            hologram.addLine(ChatColor.GRAY + "Weight: " + ChatColor.WHITE + String.format("%.2f", weight) + "kg");
+            hologram.addLine(ChatColor.GOLD + "+$" + String.format("%.2f", price));
+            
+            // Show and remove after 2 seconds
+            hologram.show();
+            hologram.removeAfter(40L);
+            
+        } catch (Exception e) {
+            plugin.getLogger().severe("Error creating simple hologram: " + e.getMessage());
+            e.printStackTrace();
         }
     }
     
