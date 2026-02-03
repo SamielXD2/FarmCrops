@@ -45,7 +45,7 @@ jobs:
           echo "=========================================="
           echo "Building LITE Edition (v0.9.0)"
           echo "=========================================="
-          mvn clean package -Plite
+          mvn package -Plite
 
       - name: List Built JARs
         run: |
