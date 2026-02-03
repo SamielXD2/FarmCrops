@@ -16,19 +16,14 @@
     </properties>
 
     <repositories>
-        <!-- Spigot -->
         <repository>
             <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
-        
-        <!-- JitPack -->
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
-        
-        <!-- CodeMC -->
         <repository>
             <id>codemc-repo</id>
             <url>https://repo.codemc.io/repository/maven-public/</url>
@@ -36,23 +31,18 @@
     </repositories>
 
     <dependencies>
-        <!-- Spigot API -->
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
             <version>1.20.1-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
-
-        <!-- Vault API -->
         <dependency>
             <groupId>com.github.MilkBowl</groupId>
             <artifactId>VaultAPI</artifactId>
             <version>1.7</version>
             <scope>provided</scope>
         </dependency>
-        
-        <!-- DecentHolograms -->
         <dependency>
             <groupId>com.github.decentsoftware-eu</groupId>
             <artifactId>decentholograms</artifactId>
@@ -104,16 +94,12 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
-                <includes>
-                    <include>**/*.yml</include>
-                </includes>
             </resource>
         </resources>
     </build>
 
-    <!-- Build Profiles for Premium and Lite versions -->
     <profiles>
-        <!-- Premium Profile (Default) -->
+        <!-- PREMIUM EDITION -->
         <profile>
             <id>premium</id>
             <activation>
@@ -129,10 +115,31 @@
             </properties>
             <build>
                 <finalName>FarmCrops-Premium-${plugin.version}</finalName>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.4.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-premium-source</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/premium/java</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
 
-        <!-- Lite Profile (Limited Features) -->
+        <!-- LITE EDITION -->
         <profile>
             <id>lite</id>
             <properties>
@@ -146,24 +153,24 @@
             <build>
                 <finalName>FarmCrops-Lite-${plugin.version}</finalName>
                 <plugins>
-                    <!-- Exclude Premium-only classes in Lite build -->
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.11.0</version>
-                        <configuration>
-                            <source>17</source>
-                            <target>17</target>
-                            <excludes>
-                                <exclude>**/AchievementManager.java</exclude>
-                                <exclude>**/AchievementGUI.java</exclude>
-                                <exclude>**/AchievementCommand.java</exclude>
-                                <exclude>**/DailyTaskManager.java</exclude>
-                                <exclude>**/CollectionManager.java</exclude>
-                                <exclude>**/TitleManager.java</exclude>
-                                <exclude>**/TitleGUI.java</exclude>
-                            </excludes>
-                        </configuration>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.4.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-lite-source</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/lite/java</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
