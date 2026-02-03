@@ -9,7 +9,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.event.player.Action;
+import org.bukkit.event.block.Action;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
