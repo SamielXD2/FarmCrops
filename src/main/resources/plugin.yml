@@ -1,138 +1,49 @@
 name: FarmCrops
-version: '0.9.5'
-description: Weight-based crop economy with player preferences and auto-sell
+version: 1.0.0
 main: player.farmcrops.FarmCrops
-api-version: '1.21'
-author: Samiel
-depend:
-  - Vault
-softdepend:
-  - DecentHolograms
-  - PlaceholderAPI
+api-version: 1.20
+author: YourName
+description: Advanced farming plugin with holograms, auto-sell, and quests
+depend: [FancyHolograms]
+softdepend: [Vault]
 
 commands:
-  farm:
-    description: Opens the main menu GUI
-    usage: /farm
-    aliases: [farmcrops, fc]
-    permission: farmcrops.menu
-    permission-message: You don't have permission to use FarmCrops.
+  farmcrops:
+    description: Main FarmCrops command
+    usage: /farmcrops <reload|autosell|quest>
+    aliases: [fc, crops]
     
-  sellcrops:
-    description: Opens sell GUI to sell custom crops
-    usage: /<command>
-    aliases: [fcs, sps, sellproduce]
-    permission: farmcrops.sell
-    permission-message: You don't have permission to sell crops.
+  autosell:
+    description: Toggle auto-sell for crops
+    usage: /autosell
+    permission: farmcrops.autosell
     
-  farmstats:
-    description: View your farming statistics (opens GUI)
-    usage: /farmstats [player]
-    aliases: [fstats, fs]
-    permission: farmcrops.stats
-    permission-message: You don't have permission to view stats.
-    
-  farmtop:
-    description: View the top farmers leaderboard (opens GUI)
-    usage: /farmtop [page]
-    aliases: [ftop]
-    permission: farmcrops.top
-    permission-message: You don't have permission to view the leaderboard.
-    
-  farmsettings:
-    description: Open the admin settings GUI (global server settings)
-    usage: /farmsettings
-    aliases: [fsettings]
-    permission: farmcrops.settings
-    permission-message: You don't have permission to access settings.
-    
-  farmreload:
-    description: Reload FarmCrops configuration
-    usage: /farmreload
-    aliases: [freload]
-    permission: farmcrops.reload
-    permission-message: You don't have permission to reload FarmCrops.
+  quest:
+    description: Open quest menu
+    usage: /quest
+    permission: farmcrops.quest
 
 permissions:
-  # ==========================================
-  # PLAYER PERMISSIONS
-  # ==========================================
-  
-  farmcrops.menu:
-    description: "Open the main menu GUI"
-    default: true
-    
-  farmcrops.sell:
-    description: "Open the sell GUI to sell crops"
-    default: true
-    
-  farmcrops.harvest:
-    description: "Harvest crops and receive custom weighted drops"
-    default: true
-    
-  farmcrops.stats:
-    description: "View your own farming statistics"
-    default: true
-    
-  farmcrops.stats.others:
-    description: "View other players' statistics"
-    default: op
-    
-  farmcrops.top:
-    description: "View the farming leaderboard"
-    default: true
-  
-  # ==========================================
-  # v0.9.5 NEW PERMISSIONS
-  # ==========================================
-  
-  farmcrops.autosell.use:
-    description: "Use the auto-sell feature (sell crops on harvest)"
-    default: true
-    
-  farmcrops.preview:
-    description: "Right-click crops to preview tier/weight before harvesting"
-    default: true
-  
-  # ==========================================
-  # ADMIN PERMISSIONS
-  # ==========================================
-  
-  farmcrops.settings:
-    description: "Open the admin settings GUI (global server settings)"
-    default: op
-    
-  farmcrops.reload:
-    description: "Reload the plugin configuration"
-    default: op
-    
-  # ==========================================
-  # PERMISSION GROUPS (for LuckPerms)
-  # ==========================================
-  
-  farmcrops.player:
-    description: "Basic player permissions - all default features"
-    default: true
+  farmcrops.*:
+    description: Gives access to all FarmCrops features
     children:
-      farmcrops.menu: true
-      farmcrops.sell: true
-      farmcrops.harvest: true
-      farmcrops.stats: true
-      farmcrops.top: true
-      farmcrops.autosell.use: true
+      farmcrops.admin: true
+      farmcrops.autosell: true
       farmcrops.preview: true
-      
-  farmcrops.vip:
-    description: "VIP permissions - same as player (for future premium features)"
-    default: false
-    children:
-      farmcrops.player: true
+      farmcrops.quest: true
       
   farmcrops.admin:
-    description: "Full admin access - grants all FarmCrops permissions"
+    description: Admin commands like reload
     default: op
-    children:
-      farmcrops.player: true
-      farmcrops.stats.others: true
-      farmcrops.settings: true
-      farmcrops.reload: true
+    
+  farmcrops.autosell:
+    description: Allows using auto-sell feature
+    default: false  # NOT default - players need this permission explicitly
+    
+  farmcrops.preview:
+    description: See crop growth previews on right-click
+    default: true  # Everyone can see previews
+    
+  farmcrops.quest:
+    description: Access quest system
+    default: true
