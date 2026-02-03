@@ -1,4 +1,4 @@
-name: Build FarmCrops Plugin
+name: Build FarmCrops Plugin (Premium & Lite)
 
 on:
   push:
@@ -33,22 +33,57 @@ jobs:
           [ -f src/main/resources/plugin.yml ] && echo "✓ plugin.yml found" || echo "✗ plugin.yml MISSING!"
           [ -f src/main/resources/config.yml ] && echo "✓ config.yml found" || echo "✗ config.yml MISSING!"
 
-      - name: Build with Maven
-        run: mvn clean package
-
-      - name: Verify JAR Contents
+      - name: Build Premium Version
         run: |
           echo "=========================================="
-          echo "JAR Contents (full list):"
+          echo "Building PREMIUM Edition (v1.0.0)"
           echo "=========================================="
-          jar tf target/FarmCrops-0.9.9.jar
-          echo ""
-          jar tf target/FarmCrops-0.9.9.jar | grep "^plugin.yml$" && echo "✓ plugin.yml at ROOT" || echo "✗ NOT at root"
-          jar tf target/FarmCrops-0.9.9.jar | grep "^config.yml$" && echo "✓ config.yml at ROOT" || echo "✗ NOT at root"
+          mvn clean package -Ppremium
 
-      - name: Upload Plugin JAR
+      - name: Build Lite Version
+        run: |
+          echo "=========================================="
+          echo "Building LITE Edition (v0.9.0)"
+          echo "=========================================="
+          mvn clean package -Plite
+
+      - name: List Built JARs
+        run: |
+          echo "=========================================="
+          echo "Built JAR files:"
+          echo "=========================================="
+          ls -lh target/*.jar
+
+      - name: Verify Premium JAR
+        run: |
+          echo "=========================================="
+          echo "Premium JAR Contents:"
+          echo "=========================================="
+          jar tf target/FarmCrops-Premium-1.0.0.jar | head -20
+          echo ""
+          jar tf target/FarmCrops-Premium-1.0.0.jar | grep "^plugin.yml$" && echo "✓ plugin.yml at ROOT" || echo "✗ NOT at root"
+          jar tf target/FarmCrops-Premium-1.0.0.jar | grep "^config.yml$" && echo "✓ config.yml at ROOT" || echo "✗ NOT at root"
+
+      - name: Verify Lite JAR
+        run: |
+          echo "=========================================="
+          echo "Lite JAR Contents:"
+          echo "=========================================="
+          jar tf target/FarmCrops-Lite-0.9.0.jar | head -20
+          echo ""
+          jar tf target/FarmCrops-Lite-0.9.0.jar | grep "^plugin.yml$" && echo "✓ plugin.yml at ROOT" || echo "✗ NOT at root"
+          jar tf target/FarmCrops-Lite-0.9.0.jar | grep "^config.yml$" && echo "✓ config.yml at ROOT" || echo "✗ NOT at root"
+
+      - name: Upload Premium JAR
         uses: actions/upload-artifact@v4
         with:
-          name: FarmCrops-Plugin
-          path: target/*.jar
-          retention-days: 7
+          name: FarmCrops-Premium
+          path: target/FarmCrops-Premium-*.jar
+          retention-days: 30
+
+      - name: Upload Lite JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: FarmCrops-Lite
+          path: target/FarmCrops-Lite-*.jar
+          retention-days: 30
