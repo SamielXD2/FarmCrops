@@ -136,26 +136,39 @@ public class FarmCrops extends JavaPlugin implements Listener {
         // Crop Preview Manager is initialized inside the FancyHolograms block below
         getLogger().info("");
         
-        // NEW v1.0.0 Features
+        // NEW v1.0.0 Features (Premium Only)
+        // These features are compiled out in Lite edition
         if (getConfig().getBoolean("achievements.enabled", true)) {
-            achievementManager = new AchievementManager(this);
-            achievementGUI = new AchievementGUI(this);
-            titleManager = new TitleManager(this);
-            titleGUI = new TitleGUI(this);
-            getServer().getPluginManager().registerEvents(achievementGUI, this);
-            getServer().getPluginManager().registerEvents(titleGUI, this);
-            getLogger().info("✓ Achievement System enabled");
-            getLogger().info("✓ Title System enabled");
+            try {
+                achievementManager = new AchievementManager(this);
+                achievementGUI = new AchievementGUI(this);
+                titleManager = new TitleManager(this);
+                titleGUI = new TitleGUI(this);
+                getServer().getPluginManager().registerEvents(achievementGUI, this);
+                getServer().getPluginManager().registerEvents(titleGUI, this);
+                getLogger().info("✓ Achievement System enabled");
+                getLogger().info("✓ Title System enabled");
+            } catch (NoClassDefFoundError e) {
+                getLogger().warning("⚠ Achievement System disabled (Premium feature)");
+            }
         }
         
         if (getConfig().getBoolean("daily-tasks.enabled", true)) {
-            dailyTaskManager = new DailyTaskManager(this);
-            getLogger().info("✓ Daily Tasks enabled");
+            try {
+                dailyTaskManager = new DailyTaskManager(this);
+                getLogger().info("✓ Daily Tasks enabled");
+            } catch (NoClassDefFoundError e) {
+                getLogger().warning("⚠ Daily Tasks disabled (Premium feature)");
+            }
         }
         
         if (getConfig().getBoolean("collections.enabled", true)) {
-            collectionManager = new CollectionManager(this);
-            getLogger().info("✓ Crop Collections enabled");
+            try {
+                collectionManager = new CollectionManager(this);
+                getLogger().info("✓ Crop Collections enabled");
+            } catch (NoClassDefFoundError e) {
+                getLogger().warning("⚠ Collections disabled (Premium feature)");
+            }
         }
         getLogger().info("");
 
@@ -166,9 +179,16 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getCommand("farmsettings").setExecutor(new SettingsCommand(this));
         getCommand("farmreload").setExecutor(new ReloadCommand(this));
         getCommand("farm").setExecutor(new FarmCommand(this));
-        getCommand("achievements").setExecutor(new AchievementCommand(this));
+        
+        // Premium-only commands
+        try {
+            getCommand("achievements").setExecutor(new AchievementCommand(this));
+            getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /achievements, /farmbackup");
+        } catch (NoClassDefFoundError e) {
+            getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /farmbackup (Lite Edition)");
+        }
+        
         getCommand("farmbackup").setExecutor(new BackupCommand(this));
-        getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /achievements, /farmbackup");
         getLogger().info("");
         
         // Auto-save scheduler (saves data every 5 minutes)

@@ -62,15 +62,25 @@ public class MainMenuGUI implements Listener {
             "",
             ChatColor.YELLOW + "Click to view"));
 
-        // Achievements button
-        gui.setItem(16, createItem(Material.NETHER_STAR,
-            ChatColor.GOLD + "" + ChatColor.BOLD + "✦ Achievements",
-            ChatColor.GRAY + "Complete milestones",
-            ChatColor.GRAY + "Earn rewards and titles!",
-            "",
-            ChatColor.YELLOW + "Click to view"));
+        // Achievements button (Premium only)
+        if (plugin.getAchievementGUI() != null) {
+            gui.setItem(16, createItem(Material.NETHER_STAR,
+                ChatColor.GOLD + "" + ChatColor.BOLD + "✦ Achievements",
+                ChatColor.GRAY + "Complete milestones",
+                ChatColor.GRAY + "Earn rewards and titles!",
+                "",
+                ChatColor.YELLOW + "Click to view"));
+        } else {
+            gui.setItem(16, createItem(Material.BARRIER,
+                ChatColor.RED + "" + ChatColor.BOLD + "✦ Achievements " + ChatColor.DARK_GRAY + "[LOCKED]",
+                ChatColor.GRAY + "Complete milestones",
+                ChatColor.GRAY + "Earn rewards and titles!",
+                "",
+                ChatColor.RED + "⭐ Premium Feature Only",
+                ChatColor.YELLOW + "Upgrade to unlock!"));
+        }
 
-        // Daily Tasks button (if enabled)
+        // Daily Tasks button (Premium only)
         if (plugin.getDailyTaskManager() != null) {
             gui.setItem(28, createItem(Material.CLOCK,
                 ChatColor.YELLOW + "" + ChatColor.BOLD + "📋 Daily Tasks",
@@ -78,6 +88,14 @@ public class MainMenuGUI implements Listener {
                 ChatColor.GRAY + "Fresh tasks every day!",
                 "",
                 ChatColor.YELLOW + "Click to view"));
+        } else {
+            gui.setItem(28, createItem(Material.BARRIER,
+                ChatColor.RED + "" + ChatColor.BOLD + "📋 Daily Tasks " + ChatColor.DARK_GRAY + "[LOCKED]",
+                ChatColor.GRAY + "Complete daily objectives",
+                ChatColor.GRAY + "Fresh tasks every day!",
+                "",
+                ChatColor.RED + "⭐ Premium Feature Only",
+                ChatColor.YELLOW + "Upgrade to unlock!"));
         }
 
         // My Settings button
@@ -154,7 +172,8 @@ public class MainMenuGUI implements Listener {
                 if (plugin.getAchievementGUI() != null) {
                     plugin.getAchievementGUI().openGUI(player, 1);
                 } else {
-                    player.sendMessage(ChatColor.RED + "Achievements are not enabled!");
+                    player.sendMessage(ChatColor.RED + "✗ Achievements are a Premium feature!");
+                    player.sendMessage(ChatColor.YELLOW + "Upgrade to Premium to unlock achievements, titles, and more!");
                 }
                 break;
 
@@ -165,7 +184,8 @@ public class MainMenuGUI implements Listener {
                     player.sendMessage(ChatColor.YELLOW + "Daily tasks feature coming soon!");
                     // TODO: Open daily tasks GUI
                 } else {
-                    player.sendMessage(ChatColor.RED + "Daily tasks are not enabled!");
+                    player.sendMessage(ChatColor.RED + "✗ Daily Tasks are a Premium feature!");
+                    player.sendMessage(ChatColor.YELLOW + "Upgrade to Premium to unlock daily tasks!");
                 }
                 break;
 
