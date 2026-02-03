@@ -1,69 +1,201 @@
-name: Build FarmCrops Plugin (Premium & Lite)
+# ════════════════════════════════════════════════════════════
+#                    FarmCrops Configuration
+#                      ${plugin.edition} Edition v${plugin.version}
+# ════════════════════════════════════════════════════════════
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:
+# Edition Info (Do not modify)
+edition:
+  type: "${plugin.edition}"
+  version: "${plugin.version}"
+  features:
+    achievements: ${enable.achievements}
+    daily-tasks: ${enable.dailytasks}
+    collections: ${enable.collections}
+    auto-save: ${enable.autosave}
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
+# Hologram Settings
+holograms:
+  # Harvest Flash - Shows hologram when you break crops
+  harvest-flash: true
+  flash-duration: 2  # How long harvest flash stays (seconds)
+  
+  # Right-Click Preview - Shows crop info when right-clicking crops
+  right-click-preview: true
+  preview-duration: 5  # How long preview stays (seconds)
+  
+  # Particles
+  particles: true
+  particle-amount: 10
 
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+# Weight System
+weight:
+  min: 1.0      # Minimum crop weight (kg)
+  max: 3.5      # Maximum crop weight (kg)
+  
+# Seeds - Return seeds when harvesting
+seeds:
+  enabled: true
+  drop-chance: 0.8  # 80% chance to drop seeds
 
-      - name: Set Up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'maven'
+# Tier System
+tiers:
+  Common:
+    weight-range: [1.0, 1.49]
+    multiplier: 1.0
+    color: "WHITE"
+  Uncommon:
+    weight-range: [1.5, 1.99]
+    multiplier: 1.2
+    color: "GREEN"
+  Rare:
+    weight-range: [2.0, 2.49]
+    multiplier: 1.5
+    color: "BLUE"
+  Epic:
+    weight-range: [2.5, 2.99]
+    multiplier: 2.0
+    color: "LIGHT_PURPLE"
+  Legendary:
+    weight-range: [3.0, 3.5]
+    multiplier: 3.0
+    color: "GOLD"
 
-      - name: Verify Resources Exist
-        run: |
-          echo "=========================================="
-          echo "Checking if resource files exist..."
-          echo "=========================================="
-          ls -la src/main/resources/ || echo "resources dir missing!"
-          [ -f src/main/resources/plugin.yml ] && echo "✓ plugin.yml found" || echo "✗ plugin.yml MISSING!"
-          [ -f src/main/resources/config.yml ] && echo "✓ config.yml found" || echo "✗ config.yml MISSING!"
+# Crop Prices (base price per kg)
+prices:
+  wheat: 2.0
+  carrot: 1.5
+  potato: 1.5
+  beetroot: 1.8
+  nether_wart: 3.0
+  cocoa_beans: 2.5
+  sweet_berries: 2.2
+  melon: 1.2
+  pumpkin: 1.8
 
-      - name: Build Premium Version
-        run: |
-          echo "=========================================="
-          echo "Building PREMIUM Edition (v1.0.0)"
-          echo "=========================================="
-          mvn clean package -Ppremium
+# Custom Crops - Add your own crops here!
+# Format: MATERIAL_NAME: price
+custom-crops:
+  enabled: true
+  crops:
+    # Add more crops as needed
+    # Example: SUGAR_CANE: 1.5
 
-      - name: Build Lite Version
-        run: |
-          echo "=========================================="
-          echo "Building LITE Edition (v0.9.0)"
-          echo "=========================================="
-          mvn package -Plite
+# Auto-Sell Settings
+auto-sell:
+  enabled: true
+  require-permission: true  # Requires farmcrops.autosell permission
+  multiplier: 0.95  # 95% of normal price when auto-selling
 
-      - name: List Built JARs
-        run: |
-          echo "=========================================="
-          echo "Built JAR files:"
-          echo "=========================================="
-          ls -lh target/*.jar
+# Daily Tasks System (Premium Only)
+daily-tasks:
+  enabled: ${enable.dailytasks}
+  reset-time: "00:00"  # Reset at midnight server time
+  tasks:
+    wheat_task:
+      name: "Wheat Farmer"
+      description: "Harvest 100 wheat crops today"
+      crop-type: "WHEAT"
+      requirement: 100
+      rewards:
+        money: 500
+    
+    carrot_task:
+      name: "Carrot Collector"
+      description: "Harvest 75 carrots today"
+      crop-type: "CARROTS"
+      requirement: 75
+      rewards:
+        money: 400
+    
+    potato_task:
+      name: "Potato Pro"
+      description: "Harvest 75 potatoes today"
+      crop-type: "POTATOES"
+      requirement: 75
+      rewards:
+        money: 400
+    
+    nether_wart_task:
+      name: "Nether Farmer"
+      description: "Harvest 50 nether wart today"
+      crop-type: "NETHER_WART"
+      requirement: 50
+      rewards:
+        money: 600
 
-      - name: Upload Premium JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: FarmCrops-Premium
-          path: target/FarmCrops-Premium-*.jar
-          retention-days: 30
+# Achievements System (Premium Only)
+achievements:
+  enabled: ${enable.achievements}
+  broadcast: true  # Broadcast when player unlocks achievement
+  achievements:
+    first_harvest:
+      name: "First Harvest"
+      description: "Harvest your first crop"
+      requirement: 1
+      reward: 100
+    
+    hundred_harvests:
+      name: "Farming Enthusiast"
+      description: "Harvest 100 crops"
+      requirement: 100
+      reward: 500
+    
+    thousand_harvests:
+      name: "Master Farmer"
+      description: "Harvest 1,000 crops"
+      requirement: 1000
+      reward: 5000
+    
+    legendary_find:
+      name: "Legendary Find!"
+      description: "Find a Legendary tier crop"
+      requirement: 1
+      reward: 1000
+    
+    millionaire:
+      name: "Crop Millionaire"
+      description: "Earn $1,000,000 from crops"
+      requirement: 1000000
+      reward: 50000
 
-      - name: Upload Lite JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: FarmCrops-Lite
-          path: target/FarmCrops-Lite-*.jar
-          retention-days: 30
+# Collections System (Premium Only)
+collections:
+  enabled: ${enable.collections}
+  # Milestones for each crop type
+  milestones: [50, 100, 250, 500, 1000, 2500, 5000, 10000]
+  # Reward per milestone: milestone amount * multiplier
+  reward-multiplier: 0.5  # $0.50 per crop in milestone
+
+# Auto-Save Settings
+auto-save:
+  enabled: ${enable.autosave}
+  interval: 6000  # 6000 ticks = 5 minutes
+
+# Backup System
+backup:
+  enabled: true
+  interval: 72000  # 72000 ticks = 1 hour
+  keep-backups: 5  # Keep last 5 backups
+
+# Messages
+messages:
+  prefix: "§a§lFarmCrops §8» "
+  no-permission: "§cYou don't have permission to do that!"
+  autosell-enabled: "§aAuto-sell enabled!"
+  autosell-disabled: "§cAuto-sell disabled."
+  achievement-unlocked: "§6§l✦ Achievement Unlocked! §r§e{achievement}"
+  daily-task-complete: "§a§l✓ Daily Task Complete! §r§7{task}"
+  collection-milestone: "§b§l★ Collection Milestone! §r§7{crop} - {amount}"
+
+# Performance Settings
+performance:
+  # Cache settings to reduce database calls
+  cache-player-data: true
+  cache-duration: 600  # 10 minutes
+  
+  # Async database operations
+  async-saves: true
+  async-loads: true
+
+# Debug Mode (for testing)
+debug: false
