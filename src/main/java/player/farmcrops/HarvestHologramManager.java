@@ -44,7 +44,7 @@ public class HarvestHologramManager {
         
         data.setText(List.of(line1, line2, line3));
         data.setPersistent(false);
-        data.setVisibilityDistance(16.0f);
+        data.setVisibilityDistance(16);
         
         // Create and show hologram
         Hologram hologram = fancyAPI.getHologramManager().create(data);
