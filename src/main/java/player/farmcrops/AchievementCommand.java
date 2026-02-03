@@ -28,7 +28,7 @@ public class AchievementCommand implements CommandExecutor {
             return true;
         }
         
-        plugin.getAchievementGUI().openGUI(player);
+        plugin.getAchievementGUI().openGUI(player, 1);
         return true;
     }
 }
