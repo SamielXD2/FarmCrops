@@ -24,6 +24,11 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private PlayerSettingsGUI playerSettingsGUI;
     private CropPreviewManager cropPreviewManager;
     private boolean holoEnabled = false;
+    
+    // New v1.0.0 Features
+    private AchievementManager achievementManager;
+    private DailyTaskManager dailyTaskManager;
+    private CollectionManager collectionManager;
 
     @Override
     public void onEnable() {
@@ -117,6 +122,23 @@ public class FarmCrops extends JavaPlugin implements Listener {
         cropPreviewManager = new CropPreviewManager(this);
         getServer().getPluginManager().registerEvents(cropPreviewManager, this);
         getLogger().info("✓ Crop Preview Manager initialized (right-click preview + caching)");
+        getLogger().info("");
+        
+        // NEW v1.0.0 Features
+        if (getConfig().getBoolean("achievements.enabled", true)) {
+            achievementManager = new AchievementManager(this);
+            getLogger().info("✓ Achievement System enabled");
+        }
+        
+        if (getConfig().getBoolean("daily-tasks.enabled", true)) {
+            dailyTaskManager = new DailyTaskManager(this);
+            getLogger().info("✓ Daily Tasks enabled");
+        }
+        
+        if (getConfig().getBoolean("collections.enabled", true)) {
+            collectionManager = new CollectionManager(this);
+            getLogger().info("✓ Crop Collections enabled");
+        }
         getLogger().info("");
 
         // Commands
@@ -242,4 +264,9 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public PlayerSettings getPlayerSettings()  { return playerSettings; }
     public PlayerSettingsGUI getPlayerSettingsGUI() { return playerSettingsGUI; }
     public CropPreviewManager getCropPreviewManager() { return cropPreviewManager; }
+    
+    // v1.0.0 Features
+    public AchievementManager getAchievementManager() { return achievementManager; }
+    public DailyTaskManager getDailyTaskManager() { return dailyTaskManager; }
+    public CollectionManager getCollectionManager() { return collectionManager; }
 }

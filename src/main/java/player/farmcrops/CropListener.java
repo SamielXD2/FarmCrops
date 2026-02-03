@@ -134,6 +134,19 @@ public class CropListener implements Listener {
             
             // Record stats
             plugin.getStatsManager().recordHarvest(player, block.getType(), tier, weight, price);
+            
+            // v1.0.0 Features - Daily Tasks, Collections, Achievements
+            if (plugin.getDailyTaskManager() != null) {
+                plugin.getDailyTaskManager().onCropHarvest(player, block.getType());
+            }
+            
+            if (plugin.getCollectionManager() != null) {
+                plugin.getCollectionManager().addCropToCollection(player, block.getType());
+            }
+            
+            if (plugin.getAchievementManager() != null) {
+                plugin.getAchievementManager().checkAchievements(player);
+            }
         }
 
         // Drop seeds
