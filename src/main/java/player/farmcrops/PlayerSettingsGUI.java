@@ -12,10 +12,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 /**
- * v0.9.0 - Player Settings GUI (Personal preferences)
+ * v0.9.5 - Player Settings GUI (Fixed getTitle() for Paper 1.21)
  * 
  * Allows players to customize their own farming experience:
- * - Auto-sell crops on harvest
+ * - Auto-sell crops on harvest (requires farmcrops.autosell.use permission)
  * - Show/hide holograms
  * - Show/hide particles
  * - Enable/disable sounds
@@ -140,9 +140,7 @@ public class PlayerSettingsGUI implements Listener {
         
         if (!playerGUIs.containsKey(player)) return;
         
-        String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-            .serialize(event.getView().title());
-        if (!title.contains("My Settings")) return;
+        if (!event.getView().getTitle().contains(ChatColor.AQUA + "⚙ My Settings")) return;
         
         event.setCancelled(true);
         
