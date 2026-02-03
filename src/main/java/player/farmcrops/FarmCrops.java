@@ -150,6 +150,20 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getCommand("farm").setExecutor(new FarmCommand(this));
         getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm");
         getLogger().info("");
+        
+        // Auto-save scheduler (saves data every 5 minutes)
+        int autoSaveInterval = getConfig().getInt("auto-save-interval", 6000); // 6000 ticks = 5 minutes
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (statsManager != null) {
+                statsManager.saveAll();
+            }
+            if (playerSettings != null) {
+                playerSettings.saveSettings();
+            }
+            getLogger().info("Auto-save completed (stats, settings)");
+        }, autoSaveInterval, autoSaveInterval);
+        getLogger().info("✓ Auto-save enabled (every " + (autoSaveInterval / 1200) + " minutes)");
+        getLogger().info("");
 
         // PlaceholderAPI support temporarily disabled
         getLogger().info("  PlaceholderAPI integration: Disabled");
@@ -190,27 +204,58 @@ public class FarmCrops extends JavaPlugin implements Listener {
 
     @Override
     public void onDisable() {
+        // Save all player data
+        getLogger().info("Saving all player data...");
+        
         if (statsManager != null) {
-            getLogger().info("Saving player statistics...");
             statsManager.saveAll();
+            getLogger().info("✓ Player statistics saved");
+        }
+        
+        if (playerSettings != null) {
+            playerSettings.saveSettings();
+            getLogger().info("✓ Player settings saved");
+        }
+        
+        if (achievementManager != null) {
+            // TODO: Save achievements when persistence is implemented
+        }
+        
+        if (dailyTaskManager != null) {
+            // TODO: Save daily tasks when persistence is implemented
+        }
+        
+        if (collectionManager != null) {
+            // TODO: Save collections when persistence is implemented
         }
 
         getLogger().info("========================================");
         getLogger().info("  FarmCrops v0.9.5 shutting down...");
+        getLogger().info("  All data saved successfully!");
         getLogger().info("========================================");
     }
 
     /**
      * Clear stats cache when a player leaves to prevent memory leaks.
+     * Also saves their data immediately to prevent data loss.
      */
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
+        UUID uuid = event.getPlayer().getUniqueId();
+        
+        // Save player data immediately before clearing cache
         if (statsManager != null) {
-            statsManager.clearCache(event.getPlayer().getUniqueId());
+            StatsManager.PlayerStats stats = statsManager.getStats(uuid);
+            // Data is auto-saved by StatsManager, just clear cache
+            statsManager.clearCache(uuid);
         }
+        
         if (playerSettings != null) {
-            playerSettings.clearCache(event.getPlayer().getUniqueId());
+            // Save before clearing cache
+            playerSettings.saveSettings();
+            playerSettings.clearCache(uuid);
         }
+        
         if (holoEnabled && cropPreviewManager != null) {
             cropPreviewManager.cleanup();
         }
