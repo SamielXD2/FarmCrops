@@ -64,17 +64,6 @@ public class CropPreviewManager implements Listener {
             return;
         }
 
-        // Check if this is a melon block (the actual melon, not the stem)
-        if (block.getType() == Material.MELON) {
-            if (lastBlock != null) {
-                removeHologram(player);
-                lastLookedBlock.remove(player.getUniqueId());
-            }
-            lastLookedBlock.put(player.getUniqueId(), block);
-            showMelonInfo(player, block.getLocation());
-            return;
-        }
-
         if (!isTrackedCrop(block.getType())) {
             if (lastBlock != null) {
                 removeHologram(player);
@@ -91,21 +80,6 @@ public class CropPreviewManager implements Listener {
 
         lastLookedBlock.put(player.getUniqueId(), block);
         showCropPreview(player, block.getLocation(), currentAge, maxAge, block.getType());
-    }
-
-    private void showMelonInfo(Player player, Location location) {
-        removeHologram(player);
-
-        String[] lines = new String[] {
-            "§a§lMELON",
-            "§a✓ READY TO HARVEST"
-        };
-        Location hologramLoc = location.clone().add(0.5, 1.5, 0.5);
-
-        String holoName = "crop-preview-" + player.getUniqueId();
-        Hologram hologram = DHAPI.createHologram(holoName, hologramLoc, Arrays.asList(lines));
-
-        activeHolograms.put(player.getUniqueId(), hologram);
     }
 
     private void showCropPreview(Player player, Location location, int currentAge, int maxAge, Material crop) {
@@ -152,8 +126,6 @@ public class CropPreviewManager implements Listener {
                material == Material.CARROTS ||
                material == Material.POTATOES ||
                material == Material.BEETROOTS ||
-               material == Material.MELON_STEM ||
-               material == Material.ATTACHED_MELON_STEM ||
                material == Material.NETHER_WART ||
                material == Material.COCOA ||
                material == Material.SWEET_BERRY_BUSH;

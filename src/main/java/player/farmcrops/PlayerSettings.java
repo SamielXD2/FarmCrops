@@ -122,36 +122,6 @@ public class PlayerSettings {
         savePreferences(player.getUniqueId(), prefs);
     }
     
-    public void toggleAchievementNotifications(Player player) {
-        PlayerPreferences prefs = getPreferences(player.getUniqueId());
-        prefs.achievementNotifications = !prefs.achievementNotifications;
-        savePreferences(player.getUniqueId(), prefs);
-    }
-    
-    public void toggleBroadcastAchievements(Player player) {
-        PlayerPreferences prefs = getPreferences(player.getUniqueId());
-        prefs.broadcastAchievements = !prefs.broadcastAchievements;
-        savePreferences(player.getUniqueId(), prefs);
-    }
-    
-    public void toggleActionBar(Player player) {
-        PlayerPreferences prefs = getPreferences(player.getUniqueId());
-        prefs.showActionBar = !prefs.showActionBar;
-        savePreferences(player.getUniqueId(), prefs);
-    }
-    
-    public void toggleScoreboard(Player player) {
-        PlayerPreferences prefs = getPreferences(player.getUniqueId());
-        prefs.showScoreboard = !prefs.showScoreboard;
-        savePreferences(player.getUniqueId(), prefs);
-    }
-    
-    public void toggleTitleDisplay(Player player) {
-        PlayerPreferences prefs = getPreferences(player.getUniqueId());
-        prefs.showTitle = !prefs.showTitle;
-        savePreferences(player.getUniqueId(), prefs);
-    }
-    
     public void clearCache(UUID uuid) {
         cache.remove(uuid);
     }
