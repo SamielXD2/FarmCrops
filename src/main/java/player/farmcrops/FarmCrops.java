@@ -131,10 +131,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("✓ Player Settings GUI initialized");
         getLogger().info("");
 
-        // Crop Preview Manager (v0.10.0)
-        cropPreviewManager = new CropPreviewManager(this);
-        getServer().getPluginManager().registerEvents(cropPreviewManager, this);
-        getLogger().info("✓ Crop Preview Manager initialized (right-click preview + caching)");
+        // Crop Preview Manager is initialized inside the FancyHolograms block below
         getLogger().info("");
         
         // NEW v1.0.0 Features
@@ -164,7 +161,8 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getCommand("farmreload").setExecutor(new ReloadCommand(this));
         getCommand("farm").setExecutor(new FarmCommand(this));
         getCommand("achievements").setExecutor(new AchievementCommand(this));
-        getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /achievements");
+        getCommand("farmbackup").setExecutor(new BackupCommand(this));
+        getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /achievements, /farmbackup");
         getLogger().info("");
         
         // Auto-save scheduler (saves data every 5 minutes)
@@ -248,7 +246,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
         }
 
         getLogger().info("========================================");
-        getLogger().info("  FarmCrops v0.9.9 shutting down...");
+        getLogger().info("  FarmCrops v" + getDescription().getVersion() + " shutting down...");
         getLogger().info("  All data saved successfully!");
         getLogger().info("========================================");
     }
