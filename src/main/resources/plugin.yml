@@ -1,9 +1,9 @@
 name: FarmCrops
-version: 0.9.9
+version: ${plugin.version}
 main: player.farmcrops.FarmCrops
 api-version: 1.20
 author: YourName
-description: Advanced farming plugin with holograms, auto-sell, and quests
+description: Advanced farming plugin with holograms, auto-sell, and quests (${plugin.edition} Edition)
 depend: [FancyHolograms]
 softdepend: [Vault]
 

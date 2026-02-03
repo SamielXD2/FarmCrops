@@ -1,6 +1,17 @@
 # ════════════════════════════════════════════════════════════
 #                    FarmCrops Configuration
+#                      ${plugin.edition} Edition v${plugin.version}
 # ════════════════════════════════════════════════════════════
+
+# Edition Info (Do not modify)
+edition:
+  type: "${plugin.edition}"
+  version: "${plugin.version}"
+  features:
+    achievements: ${enable.achievements}
+    daily-tasks: ${enable.dailytasks}
+    collections: ${enable.collections}
+    auto-save: ${enable.autosave}
 
 # Hologram Settings
 holograms:
@@ -30,9 +41,9 @@ auto-sell:
   enabled: true
   require-permission: true  # Requires farmcrops.autosell permission
 
-# Daily Tasks System
+# Daily Tasks System (Premium Only)
 daily-tasks:
-  enabled: true
+  enabled: ${enable.dailytasks}
   tasks:
     wheat_task:
       name: "Wheat Farmer"
@@ -58,16 +69,19 @@ daily-tasks:
       rewards:
         money: 400
 
-# Achievements System
+# Achievements System (Premium Only)
 achievements:
-  enabled: true
+  enabled: ${enable.achievements}
   broadcast: true  # Broadcast when player unlocks achievement
 
-# Collections System
+# Collections System (Premium Only)
 collections:
-  enabled: true
+  enabled: ${enable.collections}
   # Milestones: 50, 100, 250, 500, 1000, 2500, 5000, 10000
   # Rewards automatically calculated: milestone * $0.50
+
+# Auto-Save (Premium has shorter interval)
+auto-save-interval: 6000  # 6000 ticks = 5 minutes (Premium), Lite might be longer
 
 # Messages
 messages:
