@@ -27,13 +27,17 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private CropPreviewManager cropPreviewManager;
     private boolean holoEnabled = false;
     
-    // New v1.0.0 Features
+    // Premium Features (may be null in Lite version)
     private AchievementManager achievementManager;
     private DailyTaskManager dailyTaskManager;
     private CollectionManager collectionManager;
     private AchievementGUI achievementGUI;
     private TitleManager titleManager;
     private TitleGUI titleGUI;
+    
+    // Edition detection
+    private boolean isPremiumEdition = false;
+    private boolean hasPremiumClasses = false;
 
     @Override
     public void onEnable() {
@@ -44,13 +48,16 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("       FARMCROPS v" + getDescription().getVersion());
         getLogger().info("  Weight-Based Crop Economy System");
         
-        // Check if this is Premium or Lite
-        String edition = getConfig().getString("edition.type", "Unknown");
-        if ("Premium".equals(edition)) {
+        // Detect edition
+        detectEdition();
+        
+        if (isPremiumEdition) {
             getLogger().info("         ⭐ PREMIUM EDITION ⭐");
-        } else if ("Lite".equals(edition)) {
+            getLogger().info("  All features unlocked!");
+        } else {
             getLogger().info("         💎 LITE EDITION 💎");
-            getLogger().info("  (Upgrade to Premium for more features!)");
+            getLogger().info("  (Upgrade to Premium for Achievements,");
+            getLogger().info("   Daily Tasks, and Collections!)");
         }
         
         getLogger().info("========================================");
@@ -132,43 +139,40 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(playerSettingsGUI, this);
         getLogger().info("✓ Player Settings GUI initialized");
         getLogger().info("");
-
-        // Crop Preview Manager is initialized inside the FancyHolograms block below
-        getLogger().info("");
         
-        // NEW v1.0.0 Features
-        if (getConfig().getBoolean("achievements.enabled", true)) {
-            achievementManager = new AchievementManager(this);
-            achievementGUI = new AchievementGUI(this);
-            titleManager = new TitleManager(this);
-            titleGUI = new TitleGUI(this);
-            getServer().getPluginManager().registerEvents(achievementGUI, this);
-            getServer().getPluginManager().registerEvents(titleGUI, this);
-            getLogger().info("✓ Achievement System enabled");
-            getLogger().info("✓ Title System enabled");
-        }
-        
-        if (getConfig().getBoolean("daily-tasks.enabled", true)) {
-            dailyTaskManager = new DailyTaskManager(this);
-            getLogger().info("✓ Daily Tasks enabled");
-        }
-        
-        if (getConfig().getBoolean("collections.enabled", true)) {
-            collectionManager = new CollectionManager(this);
-            getLogger().info("✓ Crop Collections enabled");
+        // Load Premium Features (if available)
+        if (isPremiumEdition && hasPremiumClasses) {
+            loadPremiumFeatures();
+        } else if (isPremiumEdition && !hasPremiumClasses) {
+            getLogger().warning("⚠ Premium edition detected but premium classes not found!");
+            getLogger().warning("⚠ This may be a compilation issue. Premium features disabled.");
+        } else {
+            getLogger().info("ℹ Premium features not available in Lite edition");
+            getLogger().info("ℹ To unlock: Achievements, Daily Tasks, Collections");
+            getLogger().info("ℹ Visit: [Your website/store link here]");
         }
         getLogger().info("");
 
-        // Commands
+        // Commands (Basic - always available)
         getCommand("sellcrops").setExecutor(new SellCommand(this));
         getCommand("farmstats").setExecutor(new StatsCommand(this));
         getCommand("farmtop").setExecutor(new TopCommand(this));
         getCommand("farmsettings").setExecutor(new SettingsCommand(this));
         getCommand("farmreload").setExecutor(new ReloadCommand(this));
         getCommand("farm").setExecutor(new FarmCommand(this));
-        getCommand("achievements").setExecutor(new AchievementCommand(this));
         getCommand("farmbackup").setExecutor(new BackupCommand(this));
-        getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /achievements, /farmbackup");
+        
+        // Premium commands (only if available)
+        if (isPremiumEdition && hasPremiumClasses) {
+            try {
+                getCommand("achievements").setExecutor(new AchievementCommand(this));
+                getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /achievements, /farmbackup");
+            } catch (Exception e) {
+                getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /farmbackup");
+            }
+        } else {
+            getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /farmbackup");
+        }
         getLogger().info("");
         
         // Auto-save scheduler (saves data every 5 minutes)
@@ -220,8 +224,85 @@ public class FarmCrops extends JavaPlugin implements Listener {
 
         getLogger().info("========================================");
         getLogger().info("  ✓✓✓ FARMCROPS v" + getDescription().getVersion() + " ENABLED ✓✓✓");
-        getLogger().info("  Edition: " + getConfig().getString("edition.type", "Unknown"));
+        getLogger().info("  Edition: " + (isPremiumEdition ? "Premium" : "Lite"));
         getLogger().info("========================================");
+    }
+
+    /**
+     * Detect if this is Premium or Lite edition
+     * Checks both version number and if premium classes exist
+     */
+    private void detectEdition() {
+        // Method 1: Check version number (1.0.0+ = Premium, 0.9.x = Lite)
+        String version = getDescription().getVersion();
+        isPremiumEdition = version.startsWith("1.0") || version.startsWith("1.1") || version.startsWith("1.2");
+        
+        // Method 2: Check if premium classes actually exist (for compile-time exclusion)
+        try {
+            Class.forName("player.farmcrops.AchievementManager");
+            Class.forName("player.farmcrops.DailyTaskManager");
+            Class.forName("player.farmcrops.CollectionManager");
+            hasPremiumClasses = true;
+        } catch (ClassNotFoundException e) {
+            hasPremiumClasses = false;
+        }
+        
+        // Override: If classes don't exist, can't be premium regardless of version
+        if (!hasPremiumClasses && isPremiumEdition) {
+            getLogger().warning("Premium version detected but classes missing - treating as Lite");
+            isPremiumEdition = false;
+        }
+    }
+
+    /**
+     * Load premium features (Achievements, Daily Tasks, Collections)
+     * Only called if isPremiumEdition && hasPremiumClasses
+     */
+    private void loadPremiumFeatures() {
+        try {
+            getLogger().info("─────────────────────────────────────");
+            getLogger().info("  Loading Premium Features...");
+            getLogger().info("─────────────────────────────────────");
+            
+            // Achievement System
+            if (getConfig().getBoolean("achievements.enabled", true)) {
+                achievementManager = new AchievementManager(this);
+                achievementGUI = new AchievementGUI(this);
+                titleManager = new TitleManager(this);
+                titleGUI = new TitleGUI(this);
+                getServer().getPluginManager().registerEvents(achievementGUI, this);
+                getServer().getPluginManager().registerEvents(titleGUI, this);
+                getLogger().info("✓ Achievement System enabled");
+                getLogger().info("✓ Title System enabled");
+            } else {
+                getLogger().info("✗ Achievements disabled in config");
+            }
+            
+            // Daily Tasks
+            if (getConfig().getBoolean("daily-tasks.enabled", true)) {
+                dailyTaskManager = new DailyTaskManager(this);
+                getLogger().info("✓ Daily Tasks enabled");
+            } else {
+                getLogger().info("✗ Daily Tasks disabled in config");
+            }
+            
+            // Collections
+            if (getConfig().getBoolean("collections.enabled", true)) {
+                collectionManager = new CollectionManager(this);
+                getLogger().info("✓ Crop Collections enabled");
+            } else {
+                getLogger().info("✗ Collections disabled in config");
+            }
+            
+            getLogger().info("─────────────────────────────────────");
+            getLogger().info("  ⭐ Premium Features Loaded! ⭐");
+            getLogger().info("─────────────────────────────────────");
+            
+        } catch (Exception e) {
+            getLogger().severe("Failed to load premium features!");
+            e.printStackTrace();
+            getLogger().severe("Premium features will be unavailable.");
+        }
     }
 
     @Override
@@ -239,6 +320,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
             getLogger().info("✓ Player settings saved");
         }
         
+        // Save premium features (if they exist)
         if (achievementManager != null) {
             // TODO: Save achievements when persistence is implemented
         }
@@ -253,6 +335,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
 
         getLogger().info("========================================");
         getLogger().info("  FarmCrops v" + getDescription().getVersion() + " shutting down...");
+        getLogger().info("  Edition: " + (isPremiumEdition ? "Premium" : "Lite"));
         getLogger().info("  All data saved successfully!");
         getLogger().info("========================================");
     }
@@ -333,7 +416,11 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public CropPreviewManager getCropPreviewManager() { return cropPreviewManager; }
     public HoloManager getHoloManager()        { return holoManager; }
     
-    // v1.0.0 Features
+    // Edition info
+    public boolean isPremiumEdition()          { return isPremiumEdition; }
+    public boolean hasPremiumFeatures()        { return isPremiumEdition && hasPremiumClasses; }
+    
+    // Premium Features (may return null in Lite version!)
     public AchievementManager getAchievementManager() { return achievementManager; }
     public AchievementGUI getAchievementGUI() { return achievementGUI; }
     public DailyTaskManager getDailyTaskManager() { return dailyTaskManager; }
