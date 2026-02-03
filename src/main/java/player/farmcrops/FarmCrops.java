@@ -38,7 +38,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
 
         getLogger().info("========================================");
         getLogger().info("========================================");
-        getLogger().info("       FARMCROPS v0.9.5");
+        getLogger().info("       FARMCROPS v0.9.9");
         getLogger().info("  Weight-Based Crop Economy System");
         getLogger().info("========================================");
         getLogger().info("========================================");
@@ -200,7 +200,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("");
 
         getLogger().info("========================================");
-        getLogger().info("  ✓✓✓ FARMCROPS v0.9.5 ENABLED ✓✓✓");
+        getLogger().info("  ✓✓✓ FARMCROPS v0.9.9 ENABLED ✓✓✓");
         getLogger().info("========================================");
     }
 
@@ -232,7 +232,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
         }
 
         getLogger().info("========================================");
-        getLogger().info("  FarmCrops v0.9.5 shutting down...");
+        getLogger().info("  FarmCrops v0.9.9 shutting down...");
         getLogger().info("  All data saved successfully!");
         getLogger().info("========================================");
     }
