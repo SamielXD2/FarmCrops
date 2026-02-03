@@ -31,6 +31,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private AchievementManager achievementManager;
     private DailyTaskManager dailyTaskManager;
     private CollectionManager collectionManager;
+    private AchievementGUI achievementGUI;
 
     @Override
     public void onEnable() {
@@ -139,6 +140,8 @@ public class FarmCrops extends JavaPlugin implements Listener {
         // NEW v1.0.0 Features
         if (getConfig().getBoolean("achievements.enabled", true)) {
             achievementManager = new AchievementManager(this);
+            achievementGUI = new AchievementGUI(this);
+            getServer().getPluginManager().registerEvents(achievementGUI, this);
             getLogger().info("✓ Achievement System enabled");
         }
         
@@ -160,7 +163,8 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getCommand("farmsettings").setExecutor(new SettingsCommand(this));
         getCommand("farmreload").setExecutor(new ReloadCommand(this));
         getCommand("farm").setExecutor(new FarmCommand(this));
-        getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm");
+        getCommand("achievements").setExecutor(new AchievementCommand(this));
+        getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /achievements");
         getLogger().info("");
         
         // Auto-save scheduler (saves data every 5 minutes)
@@ -327,6 +331,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     
     // v1.0.0 Features
     public AchievementManager getAchievementManager() { return achievementManager; }
+    public AchievementGUI getAchievementGUI() { return achievementGUI; }
     public DailyTaskManager getDailyTaskManager() { return dailyTaskManager; }
     public CollectionManager getCollectionManager() { return collectionManager; }
 }
