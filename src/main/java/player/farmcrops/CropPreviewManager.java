@@ -1,74 +1,49 @@
 package player.farmcrops;
 
-import org.bukkit.*;
+import de.oliver.fancyholograms.api.FancyHologramsPlugin;
+import de.oliver.fancyholograms.api.data.TextHologramData;
+import de.oliver.fancyholograms.api.hologram.Hologram;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.UUID;
 
-/**
- * v0.10.0 — Right-click crop preview with caching.
- *
- * When a player right-clicks a fully-grown crop:
- *   1. A tier + weight is rolled and stored in the cache keyed to that block location.
- *   2. The player sees the preview (hologram if available, otherwise chat).
- *   3. When the block is actually broken, CropListener pulls from the cache
- *      instead of re-rolling — so the harvest matches the preview exactly.
- *   4. Cache entries are removed on harvest OR after a configurable TTL
- *      (default 60 s) so memory never leaks.
- *
- * Permission: farmcrops.preview   (default: true, already in plugin.yml)
- * Config keys already present in config.yml:
- *   holograms.right-click-preview   – master toggle
- *   holograms.preview-duration      – seconds before cache entry expires (default 3 … we treat it as 60 for TTL)
- */
 public class CropPreviewManager implements Listener {
 
-    private final FarmCrops plugin;
+    private final JavaPlugin plugin;
+    private final Map<UUID, Hologram> activeHolograms = new HashMap<>();
+    private final FancyHologramsPlugin fancyHolograms;
 
-    // ── cached previews, keyed by block location ──
-    // Accessible package-private so CropListener can pull & remove entries.
-    final Map<Location, PreviewData> cache = new ConcurrentHashMap<>();
-
-    // How long (ms) a preview stays cached before auto-expiry.
-    // We read "holograms.preview-duration" from config as seconds.
-    private long ttlMillis;
-
-    public CropPreviewManager(FarmCrops plugin) {
+    public CropPreviewManager(JavaPlugin plugin) {
         this.plugin = plugin;
-        reloadTTL();
-        startCleanupTask();
+        this.fancyHolograms = (FancyHologramsPlugin) plugin.getServer().getPluginManager().getPlugin("FancyHolograms");
     }
 
-    /** Re-read TTL from live config (called on /farmreload). */
-    public void reloadTTL() {
-        int seconds = plugin.getConfig().getInt("holograms.preview-cache-ttl", 60);
-        ttlMillis = (long) seconds * 1000L;
-    }
-
-    // ─────────────────────────────────────────────
+    // ────────────────────────────────────────
     // Event: right-click on a crop block
-    // ─────────────────────────────────────────────
+    // ────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onPlayerInteract(PlayerInteractEvent event) {
         // Only care about right-click on a block
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        if (event.getBlockFace() == null) return;
+        if (event.getClickedBlock() == null) return;
 
         Block block = event.getClickedBlock();
-        if (block == null) return;
 
-        // Master toggle
+        // Master toggle - check permission
         if (!plugin.getConfig().getBoolean("holograms.right-click-preview", true)) return;
 
         // Must be a tracked crop
@@ -76,162 +51,96 @@ public class CropPreviewManager implements Listener {
 
         Player player = event.getPlayer();
 
-        // Permission gate
-        if (!player.hasPermission("farmcrops.preview")) return;
+        // Check if player has permission to see previews
+        if (!player.hasPermission("farmcrops.preview")) {
+            return; // Silently ignore if no permission
+        }
 
-        // Must be fully grown
+        // Get crop stage info
         if (!(block.getBlockData() instanceof Ageable)) return;
         Ageable ageable = (Ageable) block.getBlockData();
-        if (ageable.getAge() < ageable.getMaximumAge()) return;
 
-        // Prevent the interact from also placing a block / eating food
-        event.setCancelled(true);
+        int currentAge = ageable.getAge();
+        int maxAge = ageable.getMaximumAge();
 
-        Location loc = block.getLocation();
-
-        // If there is already a cached preview for this block, just show it again (no re-roll)
-        PreviewData existing = cache.get(loc);
-        if (existing != null) {
-            showPreview(player, block, existing);
-            return;
-        }
-
-        // Roll a new preview and cache it
-        PreviewData preview = rollPreview(block.getType());
-        cache.put(loc, preview);
-
-        showPreview(player, block, preview);
+        // Show the hologram
+        showCropPreview(player, block.getLocation(), currentAge, maxAge, block.getType());
     }
 
-    // ─────────────────────────────────────────────
-    // Roll
-    // ─────────────────────────────────────────────
+    private void showCropPreview(Player player, Location location, int currentAge, int maxAge, Material crop) {
+        // Remove any existing hologram for this player
+        removeHologram(player);
 
-    private PreviewData rollPreview(Material cropType) {
-        String tier = rollTier();
-        double minW = plugin.getConfig().getDouble("weight.min", 0.5);
-        double maxW = plugin.getConfig().getDouble("weight.max", 10.0);
-        double weight = Math.round(ThreadLocalRandom.current().nextDouble(minW, maxW) * 100.0) / 100.0;
+        // Create hologram text
+        String text = formatCropInfo(crop, currentAge, maxAge);
+        
+        // Position hologram above the block
+        Location hologramLoc = location.clone().add(0.5, 1.5, 0.5);
 
-        double basePrice   = plugin.getCropPrice(cropType);
-        double tierMult    = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
-        double price       = basePrice * tierMult * weight;
+        // Create hologram data
+        TextHologramData hologramData = new TextHologramData("crop-preview-" + player.getUniqueId(), hologramLoc);
+        hologramData.setText(text);
+        hologramData.setTextShadow(true);
+        hologramData.setBackground(TextHologramData.Background.FULL);
+        
+        // Create and show hologram
+        Hologram hologram = fancyHolograms.getHologramManager().create(hologramData);
+        hologram.createHologram();
+        hologram.showHologram(player);
 
-        return new PreviewData(tier, weight, price, System.currentTimeMillis());
-    }
+        // Store reference
+        activeHolograms.put(player.getUniqueId(), hologram);
 
-    // ─────────────────────────────────────────────
-    // Show preview to the player
-    // ─────────────────────────────────────────────
-
-    private void showPreview(Player player, Block cropBlock, PreviewData preview) {
-        String color  = plugin.getConfig().getString("tiers." + preview.tier + ".color", "&7");
-        String colored = ChatColor.translateAlternateColorCodes('&', color);
-        String cropName = CropListener.formatName(cropBlock.getType());
-        String tierName = preview.tier.substring(0, 1).toUpperCase() + preview.tier.substring(1);
-
-        // ── hologram (if DecentHolograms is live) ──
-        if (plugin.isHoloEnabled()) {
-            plugin.getHoloManager().flashPreview(
-                cropBlock.getLocation(), player, preview.tier, preview.weight, preview.price, cropName
-            );
-        }
-
-        // ── chat message (always, nice on mobile / when holos are off) ──
-        PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings()
-            .getPreferences(player.getUniqueId());
-        if (prefs.showHarvestMessages) {
-            player.sendMessage(
-                colored + "🌾 " + tierName + " " + cropName +
-                ChatColor.GRAY + " — " +
-                ChatColor.WHITE + preview.weight + " kg" +
-                ChatColor.GRAY + " | " +
-                ChatColor.GOLD + "$" + String.format("%.2f", preview.price) +
-                ChatColor.GRAY + " (cached)"
-            );
-        }
-
-        // ── sound ──
-        if (prefs.playSounds) {
-            player.playSound(player.getLocation(), Sound.BLOCK_ENDER_CHEST_OPEN, 0.6f, 1.2f);
-        }
-    }
-
-    // ─────────────────────────────────────────────
-    // Public API for CropListener
-    // ─────────────────────────────────────────────
-
-    /**
-     * Pull a cached preview for this location and remove it from the cache.
-     * Returns null if nothing is cached (caller should roll normally).
-     */
-    public PreviewData consumePreview(Location loc) {
-        return cache.remove(loc);
-    }
-
-    // ─────────────────────────────────────────────
-    // Tier roller (duplicated from CropListener so this class is self-contained)
-    // ─────────────────────────────────────────────
-
-    private String rollTier() {
-        int roll = ThreadLocalRandom.current().nextInt(1, 101);
-        int common      = plugin.getConfig().getInt("tiers.common.chance", 70);
-        int rare        = plugin.getConfig().getInt("tiers.rare.chance", 19);
-        int epic        = plugin.getConfig().getInt("tiers.epic.chance", 7);
-        int legendary   = plugin.getConfig().getInt("tiers.legendary.chance", 3);
-
-        if (roll <= common)                                      return "common";
-        else if (roll <= common + rare)                          return "rare";
-        else if (roll <= common + rare + epic)                   return "epic";
-        else if (roll <= common + rare + epic + legendary)       return "legendary";
-        else                                                     return "mythic";
-    }
-
-    // ─────────────────────────────────────────────
-    // Cleanup task — expire old cache entries
-    // ─────────────────────────────────────────────
-
-    private void startCleanupTask() {
+        // Auto-remove after 5 seconds
+        int duration = plugin.getConfig().getInt("holograms.preview-duration", 5);
         new BukkitRunnable() {
             @Override
             public void run() {
-                long now = System.currentTimeMillis();
-                cache.entrySet().removeIf(e -> now - e.getValue().rolledAt > ttlMillis);
+                removeHologram(player);
             }
-        }.runTaskTimer(plugin, 0L, 200L); // every 10 seconds
+        }.runTaskLater(plugin, duration * 20L);
     }
 
-    // ─────────────────────────────────────────────
-    // Helpers
-    // ─────────────────────────────────────────────
-
-    private boolean isTrackedCrop(Material m) {
-        switch (m) {
-            case WHEAT: case CARROTS: case POTATOES: case BEETROOTS: case MELON:
-                return true;
-            default:
-                return false;
+    private void removeHologram(Player player) {
+        Hologram hologram = activeHolograms.remove(player.getUniqueId());
+        if (hologram != null) {
+            hologram.hideHologram(player);
+            hologram.deleteHologram();
         }
     }
 
-    // ─────────────────────────────────────────────
-    // Data class
-    // ─────────────────────────────────────────────
+    private String formatCropInfo(Material crop, int currentAge, int maxAge) {
+        String cropName = crop.name().replace("_", " ");
+        String status;
+        String color;
 
-    /**
-     * Immutable snapshot of a single preview roll.
-     */
-    static class PreviewData {
-        final String tier;
-        final double weight;
-        final double price;
-        final long   rolledAt; // epoch ms — used for TTL expiry
-
-        PreviewData(String tier, double weight, double price, long rolledAt) {
-            this.tier      = tier;
-            this.weight    = weight;
-            this.price     = price;
-            this.rolledAt  = rolledAt;
+        if (currentAge == maxAge) {
+            status = "READY TO HARVEST";
+            color = "§a"; // Green
+        } else {
+            int percentage = (int) ((currentAge / (double) maxAge) * 100);
+            status = "Growing: " + percentage + "%";
+            color = "§e"; // Yellow
         }
+
+        return color + "§l" + cropName + "\n" + color + status;
+    }
+
+    private boolean isTrackedCrop(Material material) {
+        return material == Material.WHEAT ||
+               material == Material.CARROTS ||
+               material == Material.POTATOES ||
+               material == Material.BEETROOTS ||
+               material == Material.NETHER_WART ||
+               material == Material.COCOA ||
+               material == Material.SWEET_BERRY_BUSH;
+    }
+
+    // Clean up on disable
+    public void cleanup() {
+        for (Hologram hologram : activeHolograms.values()) {
+            hologram.deleteHologram();
+        }
+        activeHolograms.clear();
     }
 }
