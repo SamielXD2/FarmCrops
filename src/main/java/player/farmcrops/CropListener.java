@@ -159,8 +159,8 @@ public class CropListener implements Listener {
             plugin.isHoloEnabled() && 
             plugin.getConfig().getBoolean("holograms.harvest-flash", true)) {
             
-            plugin.getHarvestHologramManager().flashHarvest(
-                dropLoc, player, tier, weight, price, formatName(block.getType())
+            plugin.getHoloManager().flashHarvest(
+                dropLoc, player.getName(), tier, weight, price, formatName(block.getType())
             );
         }
 
