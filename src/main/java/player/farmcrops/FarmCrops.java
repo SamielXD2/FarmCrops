@@ -32,6 +32,8 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private DailyTaskManager dailyTaskManager;
     private CollectionManager collectionManager;
     private AchievementGUI achievementGUI;
+    private TitleManager titleManager;
+    private TitleGUI titleGUI;
 
     @Override
     public void onEnable() {
@@ -138,8 +140,12 @@ public class FarmCrops extends JavaPlugin implements Listener {
         if (getConfig().getBoolean("achievements.enabled", true)) {
             achievementManager = new AchievementManager(this);
             achievementGUI = new AchievementGUI(this);
+            titleManager = new TitleManager(this);
+            titleGUI = new TitleGUI(this);
             getServer().getPluginManager().registerEvents(achievementGUI, this);
+            getServer().getPluginManager().registerEvents(titleGUI, this);
             getLogger().info("✓ Achievement System enabled");
+            getLogger().info("✓ Title System enabled");
         }
         
         if (getConfig().getBoolean("daily-tasks.enabled", true)) {
@@ -332,4 +338,6 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public AchievementGUI getAchievementGUI() { return achievementGUI; }
     public DailyTaskManager getDailyTaskManager() { return dailyTaskManager; }
     public CollectionManager getCollectionManager() { return collectionManager; }
+    public TitleManager getTitleManager() { return titleManager; }
+    public TitleGUI getTitleGUI() { return titleGUI; }
 }
