@@ -19,10 +19,13 @@ holograms:
   harvest-flash: true
   flash-duration: 2  # How long harvest flash stays (seconds)
   
-  # Right-Click Preview - Shows crop info when right-clicking crops
+  # Right-Click Preview - Shows crop info when looking at crops
   right-click-preview: true
   preview-duration: 5  # How long preview stays (seconds)
   
+  # Growing Cursor - show hologram while looking at growing crops
+  growing-cursor: true
+
   # Particles
   particles: true
   particle-amount: 10
@@ -33,63 +36,74 @@ weight:
   max: 3.5      # Maximum crop weight (kg)
   
 # Seeds - Return seeds when harvesting
+# Bug 7 fix: per-crop seed config added so CropListener can find them
 seeds:
   enabled: true
-  drop-chance: 0.8  # 80% chance to drop seeds
+  wheat:
+    chance: 80
+    min: 1
+    max: 3
+  carrot:
+    chance: 80
+    min: 1
+    max: 3
+  potato:
+    chance: 80
+    min: 1
+    max: 3
+  beetroot:
+    chance: 80
+    min: 1
+    max: 2
 
 # Tier System
+# Bug 7 fix: keys are now lowercase to match what rollTier() returns
 tiers:
-  Common:
-    weight-range: [1.0, 1.49]
+  common:
+    chance: 70
     multiplier: 1.0
-    color: "WHITE"
-  Uncommon:
-    weight-range: [1.5, 1.99]
+    color: "&7"
+  uncommon:
+    chance: 10
     multiplier: 1.2
-    color: "GREEN"
-  Rare:
-    weight-range: [2.0, 2.49]
+    color: "&a"
+  rare:
+    chance: 12
     multiplier: 1.5
-    color: "BLUE"
-  Epic:
-    weight-range: [2.5, 2.99]
+    color: "&9"
+  epic:
+    chance: 6
     multiplier: 2.0
-    color: "LIGHT_PURPLE"
-  Legendary:
-    weight-range: [3.0, 3.5]
+    color: "&d"
+  legendary:
+    chance: 2
     multiplier: 3.0
-    color: "GOLD"
+    color: "&6"
 
 # Crop Prices (base price per kg)
 prices:
+  default: 10.0
   wheat: 2.0
   carrot: 1.5
   potato: 1.5
   beetroot: 1.8
-  nether_wart: 3.0
-  cocoa_beans: 2.5
-  sweet_berries: 2.2
   melon: 1.2
-  pumpkin: 1.8
 
-# Custom Crops - Add your own crops here!
-# Format: MATERIAL_NAME: price
+# Custom Crops
 custom-crops:
   enabled: true
-  crops:
-    # Add more crops as needed
-    # Example: SUGAR_CANE: 1.5
+  crops: {}
 
 # Auto-Sell Settings
 auto-sell:
   enabled: true
-  require-permission: true  # Requires farmcrops.autosell permission
-  multiplier: 0.95  # 95% of normal price when auto-selling
+  require-permission: true
+  multiplier: 0.95
 
-# Daily Tasks System (Premium Only)
+# Daily Tasks System
 daily-tasks:
   enabled: ${enable.dailytasks}
-  reset-time: "00:00"  # Reset at midnight server time
+  reset-time: "00:00"
   tasks:
     wheat_task:
       name: "Wheat Farmer"
@@ -114,57 +128,17 @@ daily-tasks:
       requirement: 75
       rewards:
         money: 400
-    
-    nether_wart_task:
-      name: "Nether Farmer"
-      description: "Harvest 50 nether wart today"
-      crop-type: "NETHER_WART"
-      requirement: 50
-      rewards:
-        money: 600
 
-# Achievements System (Premium Only)
+# Achievements System
 achievements:
   enabled: ${enable.achievements}
-  broadcast: true  # Broadcast when player unlocks achievement
-  achievements:
-    first_harvest:
-      name: "First Harvest"
-      description: "Harvest your first crop"
-      requirement: 1
-      reward: 100
-    
-    hundred_harvests:
-      name: "Farming Enthusiast"
-      description: "Harvest 100 crops"
-      requirement: 100
-      reward: 500
-    
-    thousand_harvests:
-      name: "Master Farmer"
-      description: "Harvest 1,000 crops"
-      requirement: 1000
-      reward: 5000
-    
-    legendary_find:
-      name: "Legendary Find!"
-      description: "Find a Legendary tier crop"
-      requirement: 1
-      reward: 1000
-    
-    millionaire:
-      name: "Crop Millionaire"
-      description: "Earn $1,000,000 from crops"
-      requirement: 1000000
-      reward: 50000
+  broadcast: true
 
-# Collections System (Premium Only)
+# Collections System
 collections:
   enabled: ${enable.collections}
-  # Milestones for each crop type
   milestones: [50, 100, 250, 500, 1000, 2500, 5000, 10000]
-  # Reward per milestone: milestone amount * multiplier
-  reward-multiplier: 0.5  # $0.50 per crop in milestone
+  reward-multiplier: 0.5
 
 # Auto-Save Settings
 auto-save:
@@ -175,27 +149,24 @@ auto-save:
 backup:
   enabled: true
   interval: 72000  # 72000 ticks = 1 hour
-  keep-backups: 5  # Keep last 5 backups
+  keep-backups: 5
+
+# Leaderboard
+leaderboard:
+  sort-by: "earnings"   # "earnings" or "harvests"
+  page-size: 10
 
 # Messages
 messages:
   prefix: "§a§lFarmCrops §8» "
   no-permission: "§cYou don't have permission to do that!"
-  autosell-enabled: "§aAuto-sell enabled!"
-  autosell-disabled: "§cAuto-sell disabled."
-  achievement-unlocked: "§6§l✦ Achievement Unlocked! §r§e{achievement}"
-  daily-task-complete: "§a§l✓ Daily Task Complete! §r§7{task}"
-  collection-milestone: "§b§l★ Collection Milestone! §r§7{crop} - {amount}"
 
 # Performance Settings
 performance:
-  # Cache settings to reduce database calls
   cache-player-data: true
-  cache-duration: 600  # 10 minutes
-  
-  # Async database operations
+  cache-duration: 600
   async-saves: true
   async-loads: true
 
-# Debug Mode (for testing)
+# Debug Mode
 debug: false

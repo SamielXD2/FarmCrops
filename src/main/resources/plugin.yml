@@ -4,76 +4,106 @@ main: player.farmcrops.FarmCrops
 api-version: 1.20
 author: YourName
 description: Advanced farming plugin with holograms, auto-sell, and quests (${plugin.edition} Edition)
-depend: [FancyHolograms]
-softdepend: [Vault]
+
+# Vault is REQUIRED — plugin disables itself without it
+depend: [Vault]
+
+# FancyHolograms is optional — holograms just won't appear if missing
+softdepend: [FancyHolograms]
 
 commands:
-  farmcrops:
-    description: Main FarmCrops command
-    usage: /farmcrops <reload|autosell|quest>
-    aliases: [fc, crops]
-    
-  autosell:
-    description: Toggle auto-sell for crops
-    usage: /autosell
-    permission: farmcrops.autosell
-    
-  quest:
-    description: Open quest menu
-    usage: /quest
-    permission: farmcrops.quest
-    
   sellcrops:
     description: Open the crop selling GUI
     usage: /sellcrops
-    
+
   farmstats:
     description: View your farm statistics
-    usage: /farmstats
-    
+    usage: /farmstats [player]
+
   farmtop:
     description: View top farmers leaderboard
-    usage: /farmtop
-    
+    usage: /farmtop [page]
+
   farmsettings:
-    description: Open settings menu
+    description: Open admin settings menu
     usage: /farmsettings
-    
+    permission: farmcrops.settings
+
   farmreload:
     description: Reload the plugin configuration
     usage: /farmreload
-    permission: farmcrops.admin
-    
+    permission: farmcrops.reload
+
   farm:
     description: Open the main FarmCrops menu
     usage: /farm
-    
+
   achievements:
     description: View your achievements
     usage: /achievements
     aliases: [ach, achieve]
+
+  farmbackup:
+    description: Create a manual backup of all player data
+    usage: /farmbackup
+    permission: farmcrops.admin
 
 permissions:
   farmcrops.*:
     description: Gives access to all FarmCrops features
     children:
       farmcrops.admin: true
-      farmcrops.autosell: true
+      farmcrops.harvest: true
+      farmcrops.sell: true
+      farmcrops.stats: true
+      farmcrops.stats.others: true
+      farmcrops.top: true
+      farmcrops.settings: true
+      farmcrops.reload: true
+      farmcrops.menu: true
+      farmcrops.autosell.use: true
       farmcrops.preview: true
-      farmcrops.quest: true
-      
+
   farmcrops.admin:
-    description: Admin commands like reload
+    description: Admin commands (reload, backup)
     default: op
-    
-  farmcrops.autosell:
-    description: Allows using auto-sell feature
-    default: false  # NOT default - players need this permission explicitly
-    
+
+  farmcrops.harvest:
+    description: Allow custom crop drops on harvest
+    default: true
+
+  farmcrops.sell:
+    description: Open the sell GUI
+    default: true
+
+  farmcrops.stats:
+    description: View own stats
+    default: true
+
+  farmcrops.stats.others:
+    description: View other players' stats
+    default: op
+
+  farmcrops.top:
+    description: View the leaderboard
+    default: true
+
+  farmcrops.settings:
+    description: Open the admin settings GUI
+    default: op
+
+  farmcrops.reload:
+    description: Reload config without restart
+    default: op
+
+  farmcrops.menu:
+    description: Open the main menu
+    default: true
+
+  farmcrops.autosell.use:
+    description: Allows using the auto-sell feature
+    default: false
+
   farmcrops.preview:
-    description: See crop growth previews on right-click
-    default: true  # Everyone can see previews
-    
-  farmcrops.quest:
-    description: Access quest system
+    description: See crop growth previews when looking at crops
     default: true
