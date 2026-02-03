@@ -11,13 +11,18 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * v0.9.0 - Per-player settings manager
+ * v0.9.6 - Per-player settings manager (FIXED: Added all missing toggle methods)
  * 
  * Stores individual player preferences like:
  * - Auto-sell toggle
  * - Hologram visibility
  * - Particle effects
  * - Sound notifications
+ * - Achievement notifications (Premium)
+ * - Broadcast achievements (Premium)
+ * - Action bar display
+ * - Scoreboard display
+ * - Title display (Premium)
  */
 public class PlayerSettings {
     
@@ -92,6 +97,10 @@ public class PlayerSettings {
         saveSettings();
     }
     
+    // ========================================
+    // TOGGLE METHODS
+    // ========================================
+    
     public void toggleAutoSell(Player player) {
         PlayerPreferences prefs = getPreferences(player.getUniqueId());
         prefs.autoSell = !prefs.autoSell;
@@ -119,6 +128,41 @@ public class PlayerSettings {
     public void toggleHarvestMessages(Player player) {
         PlayerPreferences prefs = getPreferences(player.getUniqueId());
         prefs.showHarvestMessages = !prefs.showHarvestMessages;
+        savePreferences(player.getUniqueId(), prefs);
+    }
+    
+    // NEW: Achievement notifications toggle (Premium feature)
+    public void toggleAchievementNotifications(Player player) {
+        PlayerPreferences prefs = getPreferences(player.getUniqueId());
+        prefs.achievementNotifications = !prefs.achievementNotifications;
+        savePreferences(player.getUniqueId(), prefs);
+    }
+    
+    // NEW: Broadcast achievements toggle (Premium feature)
+    public void toggleBroadcastAchievements(Player player) {
+        PlayerPreferences prefs = getPreferences(player.getUniqueId());
+        prefs.broadcastAchievements = !prefs.broadcastAchievements;
+        savePreferences(player.getUniqueId(), prefs);
+    }
+    
+    // NEW: Action bar display toggle
+    public void toggleActionBar(Player player) {
+        PlayerPreferences prefs = getPreferences(player.getUniqueId());
+        prefs.showActionBar = !prefs.showActionBar;
+        savePreferences(player.getUniqueId(), prefs);
+    }
+    
+    // NEW: Scoreboard display toggle
+    public void toggleScoreboard(Player player) {
+        PlayerPreferences prefs = getPreferences(player.getUniqueId());
+        prefs.showScoreboard = !prefs.showScoreboard;
+        savePreferences(player.getUniqueId(), prefs);
+    }
+    
+    // NEW: Title display toggle (Premium feature)
+    public void toggleTitleDisplay(Player player) {
+        PlayerPreferences prefs = getPreferences(player.getUniqueId());
+        prefs.showTitle = !prefs.showTitle;
         savePreferences(player.getUniqueId(), prefs);
     }
     
