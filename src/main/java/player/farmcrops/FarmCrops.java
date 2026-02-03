@@ -132,7 +132,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
         // PlaceholderAPI
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new PlaceholderProvider(this).register();
-            getLogger().info("✓ PlaceholderAPI integration active");
+            getLogger().info("✓ PlaceholderAPI integration DISABLED");
         } else {
             getLogger().info("  PlaceholderAPI not found — placeholder support disabled");
         }
