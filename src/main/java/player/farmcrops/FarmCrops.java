@@ -30,7 +30,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
 
         getLogger().info("========================================");
         getLogger().info("========================================");
-        getLogger().info("       FARMCROPS v0.9.0");
+        getLogger().info("       FARMCROPS v0.9.5");
         getLogger().info("  Weight-Based Crop Economy System");
         getLogger().info("========================================");
         getLogger().info("========================================");
@@ -155,10 +155,12 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("  - farmcrops.reload   — reload config");
         getLogger().info("  - farmcrops.menu     — main menu GUI");
         getLogger().info("  - farmcrops.admin    — grants all above");
+        getLogger().info("  - farmcrops.autosell.use — auto-sell on harvest");
+        getLogger().info("  - farmcrops.preview  — right-click crop preview");
         getLogger().info("");
 
         getLogger().info("========================================");
-        getLogger().info("  ✓✓✓ FARMCROPS v0.8.0 ENABLED ✓✓✓");
+        getLogger().info("  ✓✓✓ FARMCROPS v0.9.5 ENABLED ✓✓✓");
         getLogger().info("========================================");
     }
 
@@ -170,7 +172,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
         }
 
         getLogger().info("========================================");
-        getLogger().info("  FarmCrops v0.9.0 shutting down...");
+        getLogger().info("  FarmCrops v0.9.5 shutting down...");
         getLogger().info("========================================");
     }
 
@@ -181,6 +183,12 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         if (statsManager != null) {
             statsManager.clearCache(event.getPlayer().getUniqueId());
+        }
+        if (playerSettings != null) {
+            playerSettings.clearCache(event.getPlayer().getUniqueId());
+        }
+        if (holoEnabled && holoManager != null) {
+            holoManager.cleanup(event.getPlayer());
         }
     }
 
