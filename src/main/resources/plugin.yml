@@ -1,5 +1,5 @@
 name: FarmCrops
-version: 1.0.0
+version: 0.9.9
 main: player.farmcrops.FarmCrops
 api-version: 1.20
 author: YourName
