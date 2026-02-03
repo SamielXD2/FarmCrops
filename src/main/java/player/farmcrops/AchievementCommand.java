@@ -23,8 +23,28 @@ public class AchievementCommand implements CommandExecutor {
 
         Player player = (Player) sender;
         
+        // Check if premium features are available
+        if (!plugin.hasPremiumFeatures()) {
+            player.sendMessage("");
+            player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "⭐ PREMIUM FEATURE ⭐");
+            player.sendMessage(ChatColor.YELLOW + "Achievements are only available in");
+            player.sendMessage(ChatColor.YELLOW + "FarmCrops " + ChatColor.GOLD + "Premium Edition" + ChatColor.YELLOW + "!");
+            player.sendMessage("");
+            player.sendMessage(ChatColor.GRAY + "Premium Edition includes:");
+            player.sendMessage(ChatColor.GREEN + "  ✓ Achievement System");
+            player.sendMessage(ChatColor.GREEN + "  ✓ Daily Tasks & Challenges");
+            player.sendMessage(ChatColor.GREEN + "  ✓ Crop Collections");
+            player.sendMessage(ChatColor.GREEN + "  ✓ Custom Titles");
+            player.sendMessage("");
+            player.sendMessage(ChatColor.GOLD + "Upgrade at: " + ChatColor.WHITE + "[Your store link here]");
+            player.sendMessage("");
+            return true;
+        }
+        
+        // Check if achievements are disabled in config
         if (plugin.getAchievementGUI() == null) {
-            player.sendMessage(ChatColor.RED + "Achievements are not enabled!");
+            player.sendMessage(ChatColor.RED + "✗ Achievements are disabled in the config!");
+            player.sendMessage(ChatColor.GRAY + "Ask an admin to enable them.");
             return true;
         }
         
