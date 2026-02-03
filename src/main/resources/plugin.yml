@@ -8,20 +8,41 @@ depend: [FancyHolograms]
 softdepend: [Vault]
 
 commands:
-  farmcrops:
-    description: Main FarmCrops command
-    usage: /farmcrops <reload|autosell|quest>
-    aliases: [fc, crops]
+  sellcrops:
+    description: Open the crop selling GUI
+    usage: /sellcrops
+    permission: farmcrops.sell
+    aliases: [sell]
     
-  autosell:
-    description: Toggle auto-sell for crops
-    usage: /autosell
-    permission: farmcrops.autosell
+  farmstats:
+    description: View your farming statistics
+    usage: /farmstats [player]
+    permission: farmcrops.stats
+    aliases: [stats]
     
-  quest:
-    description: Open quest menu
-    usage: /quest
-    permission: farmcrops.quest
+  farmtop:
+    description: View the top farmers leaderboard
+    usage: /farmtop
+    permission: farmcrops.top
+    aliases: [top]
+    
+  farmsettings:
+    description: Open the settings GUI
+    usage: /farmsettings
+    permission: farmcrops.settings
+    aliases: [settings]
+    
+  farmreload:
+    description: Reload the plugin configuration
+    usage: /farmreload
+    permission: farmcrops.reload
+    aliases: [reload]
+    
+  farm:
+    description: Open the main farm menu
+    usage: /farm
+    permission: farmcrops.menu
+    aliases: [farmmenu]
 
 permissions:
   farmcrops.*:
