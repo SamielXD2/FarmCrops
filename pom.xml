@@ -13,6 +13,14 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        
+        <!-- Default to Premium Edition -->
+        <plugin.version>1.0.0</plugin.version>
+        <plugin.edition>Premium</plugin.edition>
+        <enable.achievements>true</enable.achievements>
+        <enable.dailytasks>true</enable.dailytasks>
+        <enable.collections>true</enable.collections>
+        <enable.autosave>true</enable.autosave>
     </properties>
 
     <repositories>
@@ -101,22 +109,38 @@
 
     <!-- Build Profiles for Premium and Lite versions -->
     <profiles>
-        <!-- Premium Profile -->
+        <!-- Premium Profile (Default) -->
         <profile>
             <id>premium</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <plugin.version>1.0.0</plugin.version>
+                <plugin.edition>Premium</plugin.edition>
+                <enable.achievements>true</enable.achievements>
+                <enable.dailytasks>true</enable.dailytasks>
+                <enable.collections>true</enable.collections>
+                <enable.autosave>true</enable.autosave>
+            </properties>
             <build>
-                <finalName>FarmCrops-Premium-${project.version}</finalName>
+                <finalName>FarmCrops-Premium-${plugin.version}</finalName>
             </build>
         </profile>
 
-        <!-- Lite Profile -->
+        <!-- Lite Profile (Limited Features) -->
         <profile>
             <id>lite</id>
             <properties>
-                <project.version>0.9.0</project.version>
+                <plugin.version>0.9.0</plugin.version>
+                <plugin.edition>Lite</plugin.edition>
+                <enable.achievements>false</enable.achievements>
+                <enable.dailytasks>false</enable.dailytasks>
+                <enable.collections>false</enable.collections>
+                <enable.autosave>true</enable.autosave>
             </properties>
             <build>
-                <finalName>FarmCrops-Lite-${project.version}</finalName>
+                <finalName>FarmCrops-Lite-${plugin.version}</finalName>
             </build>
         </profile>
     </profiles>
