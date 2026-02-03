@@ -58,6 +58,7 @@
     </dependencies>
 
     <build>
+        <finalName>FarmCrops</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
