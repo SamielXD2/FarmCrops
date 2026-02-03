@@ -34,7 +34,7 @@ public class AchievementGUI implements Listener {
             return;
         }
         
-        Set<String> unlocked = achMgr.getUnlockedAchievements(player.getUniqueId());
+        Set<String> unlocked = achMgr.getPlayerAchievements(player.getUniqueId());
         
         // Achievement slots (0-44)
         int slot = 0;
