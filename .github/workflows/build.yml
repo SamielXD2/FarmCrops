@@ -41,10 +41,10 @@ jobs:
           echo "=========================================="
           echo "JAR Contents (full list):"
           echo "=========================================="
-          jar tf target/FarmCrops.jar
+          jar tf target/FarmCrops-0.9.9.jar
           echo ""
-          jar tf target/FarmCrops.jar | grep "^plugin.yml$" && echo "✓ plugin.yml at ROOT" || echo "✗ NOT at root"
-          jar tf target/FarmCrops.jar | grep "^config.yml$" && echo "✓ config.yml at ROOT" || echo "✗ NOT at root"
+          jar tf target/FarmCrops-0.9.9.jar | grep "^plugin.yml$" && echo "✓ plugin.yml at ROOT" || echo "✗ NOT at root"
+          jar tf target/FarmCrops-0.9.9.jar | grep "^config.yml$" && echo "✓ config.yml at ROOT" || echo "✗ NOT at root"
 
       - name: Upload Plugin JAR
         uses: actions/upload-artifact@v4
