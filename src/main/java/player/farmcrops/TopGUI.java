@@ -1,6 +1,5 @@
 package player.farmcrops;
 
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -162,7 +161,7 @@ public class TopGUI implements Listener {
 
         if (!playerGUIs.containsKey(player)) return;
 
-        String title = PlainTextComponentSerializer.plainText().serialize(event.getView().title());
+        String title = InventoryUtil.getTitle(event.getView());
         if (!title.contains("Top Farmers")) return;
 
         event.setCancelled(true);

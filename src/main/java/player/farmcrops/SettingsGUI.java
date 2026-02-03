@@ -1,6 +1,5 @@
 package player.farmcrops;
 
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -113,7 +112,7 @@ public class SettingsGUI implements Listener {
         Player player = (Player) event.getWhoClicked();
         if (!playerGUIs.containsKey(player)) return;
 
-        String title = PlainTextComponentSerializer.plainText().serialize(event.getView().title());
+        String title = InventoryUtil.getTitle(event.getView());
         if (!title.equals("FarmCrops Settings")) return;
 
         event.setCancelled(true);
