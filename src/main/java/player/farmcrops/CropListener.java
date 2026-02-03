@@ -62,18 +62,34 @@ public class CropListener implements Listener {
         PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings()
             .getPreferences(player.getUniqueId());
 
-        String tier  = rollTier();
+        // ========================================
+        // v0.10.0: USE CACHED PREVIEW IF AVAILABLE
+        // ========================================
+        String tier;
+        double weight;
+        double price;
+
+        CropPreviewManager.PreviewData cached = plugin.getCropPreviewManager().consumePreview(block.getLocation());
+        if (cached != null) {
+            // Player previewed this crop — honour the cached roll
+            tier   = cached.tier;
+            weight = cached.weight;
+            price  = cached.price;
+        } else {
+            // No preview — roll fresh
+            tier  = rollTier();
+
+            double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
+            double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
+            weight = ThreadLocalRandom.current().nextDouble(minWeight, maxWeight);
+            weight = Math.round(weight * 100.0) / 100.0;
+
+            double basePrice      = getCropPrice(block.getType());
+            double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
+            price  = basePrice * tierMultiplier * weight;
+        }
+
         String color = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
-
-        double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
-        double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
-
-        double weight = ThreadLocalRandom.current().nextDouble(minWeight, maxWeight);
-        weight = Math.round(weight * 100.0) / 100.0;
-
-        double basePrice = getCropPrice(block.getType());
-        double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
-        double price = basePrice * tierMultiplier * weight;
 
         // Cancel vanilla drops
         event.setDropItems(false);
