@@ -100,7 +100,7 @@ public class PlayerSettingsGUI implements Listener {
         
         // Achievement notifications toggle
         gui.setItem(15, createToggleItem(
-            prefs.achievementNotifications ? Material.BELL : Material.IRON_BELL,
+            prefs.achievementNotifications ? Material.BELL : Material.BELL,
             "Achievement Notifications",
             prefs.achievementNotifications,
             "Get notified for new achievements",
