@@ -62,8 +62,6 @@
     </dependencies>
 
     <build>
-        <finalName>FarmCrops-${project.version}</finalName>
-        
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -100,4 +98,26 @@
             </resource>
         </resources>
     </build>
+
+    <!-- Build Profiles for Premium and Lite versions -->
+    <profiles>
+        <!-- Premium Profile -->
+        <profile>
+            <id>premium</id>
+            <build>
+                <finalName>FarmCrops-Premium-${project.version}</finalName>
+            </build>
+        </profile>
+
+        <!-- Lite Profile -->
+        <profile>
+            <id>lite</id>
+            <properties>
+                <project.version>0.9.0</project.version>
+            </properties>
+            <build>
+                <finalName>FarmCrops-Lite-${project.version}</finalName>
+            </build>
+        </profile>
+    </profiles>
 </project>
