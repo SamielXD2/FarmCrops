@@ -228,7 +228,7 @@ public class SellGUI implements Listener {
         if (!playerGUIs.containsKey(player)) return;
 
         String title = InventoryUtil.getTitle(event.getView());
-        if (!title.equals("Sell Crops")) return;
+        if (!title.equals(ChatColor.GREEN + "Sell Crops")) return;
 
         event.setCancelled(true);
 
@@ -304,7 +304,7 @@ public class SellGUI implements Listener {
         if (!playerGUIs.containsKey(player)) return;
 
         String title = InventoryUtil.getTitle(event.getView());
-        if (!title.equals("Sell Crops")) return;
+        if (!title.equals(ChatColor.GREEN + "Sell Crops")) return;
 
         List<CropEntry> entries = playerCropData.get(player);
         if (entries != null) {
