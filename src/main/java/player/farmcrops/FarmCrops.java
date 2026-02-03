@@ -22,6 +22,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private TopGUI topGUI;
     private PlayerSettings playerSettings;
     private PlayerSettingsGUI playerSettingsGUI;
+    private CropPreviewManager cropPreviewManager;
     private boolean holoEnabled = false;
 
     @Override
@@ -110,6 +111,12 @@ public class FarmCrops extends JavaPlugin implements Listener {
         playerSettingsGUI = new PlayerSettingsGUI(this);
         getServer().getPluginManager().registerEvents(playerSettingsGUI, this);
         getLogger().info("✓ Player Settings GUI initialized");
+        getLogger().info("");
+
+        // Crop Preview Manager (v0.10.0)
+        cropPreviewManager = new CropPreviewManager(this);
+        getServer().getPluginManager().registerEvents(cropPreviewManager, this);
+        getLogger().info("✓ Crop Preview Manager initialized (right-click preview + caching)");
         getLogger().info("");
 
         // Commands
@@ -240,4 +247,5 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public TopGUI getTopGUI()                  { return topGUI; }
     public PlayerSettings getPlayerSettings()  { return playerSettings; }
     public PlayerSettingsGUI getPlayerSettingsGUI() { return playerSettingsGUI; }
+    public CropPreviewManager getCropPreviewManager() { return cropPreviewManager; }
 }
