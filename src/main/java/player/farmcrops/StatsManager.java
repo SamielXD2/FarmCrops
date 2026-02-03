@@ -95,6 +95,27 @@ public class StatsManager {
     }
 
     /**
+     * Get epic tier harvests for a player.
+     */
+    public int getEpicHarvests(UUID playerId) {
+        return getStats(playerId).epicHarvests;
+    }
+
+    /**
+     * Get legendary tier harvests for a player.
+     */
+    public int getLegendaryHarvests(UUID playerId) {
+        return getStats(playerId).legendaryHarvests;
+    }
+
+    /**
+     * Get harvests for a specific crop type.
+     */
+    public int getCropHarvests(UUID playerId, String cropType) {
+        return getStats(playerId).cropHarvests.getOrDefault(cropType, 0);
+    }
+
+    /**
      * Get leaderboard sorted by the configured criteria.
      * Scans all saved player data files.
      */

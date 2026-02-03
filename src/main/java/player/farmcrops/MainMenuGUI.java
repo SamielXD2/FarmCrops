@@ -30,16 +30,16 @@ public class MainMenuGUI implements Listener {
     }
 
     public void openGUI(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 27, ChatColor.GREEN + "🌾 FarmCrops Menu");
+        Inventory gui = Bukkit.createInventory(null, 45, ChatColor.GREEN + "🌾 FarmCrops Menu");
 
         // Fill background
         ItemStack bgGlass = createItem(Material.BLACK_STAINED_GLASS_PANE, " ");
-        for (int i = 0; i < 27; i++) {
+        for (int i = 0; i < 45; i++) {
             gui.setItem(i, bgGlass);
         }
 
         // Sell Crops button
-        gui.setItem(11, createItem(Material.EMERALD_BLOCK,
+        gui.setItem(10, createItem(Material.EMERALD_BLOCK,
             ChatColor.GREEN + "" + ChatColor.BOLD + "💰 Sell Crops",
             ChatColor.GRAY + "Open the sell GUI",
             ChatColor.GRAY + "Convert your harvests to money!",
@@ -47,7 +47,7 @@ public class MainMenuGUI implements Listener {
             ChatColor.YELLOW + "Click to open"));
 
         // My Stats button
-        gui.setItem(13, createItem(Material.BOOK,
+        gui.setItem(12, createItem(Material.BOOK,
             ChatColor.AQUA + "" + ChatColor.BOLD + "📊 My Stats",
             ChatColor.GRAY + "View your farming statistics",
             ChatColor.GRAY + "Harvests, earnings, records...",
@@ -55,15 +55,33 @@ public class MainMenuGUI implements Listener {
             ChatColor.YELLOW + "Click to view"));
 
         // Leaderboard button
-        gui.setItem(15, createItem(Material.GOLD_INGOT,
+        gui.setItem(14, createItem(Material.GOLD_INGOT,
             ChatColor.GOLD + "" + ChatColor.BOLD + "🏆 Leaderboard",
             ChatColor.GRAY + "Top farmers on the server",
             ChatColor.GRAY + "See who's farming the most!",
             "",
             ChatColor.YELLOW + "Click to view"));
 
-        // My Settings button (v0.9.0)
-        gui.setItem(20, createItem(Material.COMPARATOR,
+        // Achievements button
+        gui.setItem(16, createItem(Material.NETHER_STAR,
+            ChatColor.GOLD + "" + ChatColor.BOLD + "✦ Achievements",
+            ChatColor.GRAY + "Complete milestones",
+            ChatColor.GRAY + "Earn rewards and titles!",
+            "",
+            ChatColor.YELLOW + "Click to view"));
+
+        // Daily Tasks button (if enabled)
+        if (plugin.getDailyTaskManager() != null) {
+            gui.setItem(28, createItem(Material.CLOCK,
+                ChatColor.YELLOW + "" + ChatColor.BOLD + "📋 Daily Tasks",
+                ChatColor.GRAY + "Complete daily objectives",
+                ChatColor.GRAY + "Fresh tasks every day!",
+                "",
+                ChatColor.YELLOW + "Click to view"));
+        }
+
+        // My Settings button
+        gui.setItem(30, createItem(Material.COMPARATOR,
             ChatColor.AQUA + "" + ChatColor.BOLD + "⚙ My Settings",
             ChatColor.GRAY + "Personal preferences",
             ChatColor.GRAY + "Auto-sell, holograms, particles...",
@@ -72,7 +90,7 @@ public class MainMenuGUI implements Listener {
 
         // Admin Settings button (admin only)
         if (player.hasPermission("farmcrops.settings")) {
-            gui.setItem(22, createItem(Material.REDSTONE,
+            gui.setItem(32, createItem(Material.REDSTONE,
                 ChatColor.RED + "" + ChatColor.BOLD + "⚙ Admin Settings",
                 ChatColor.GRAY + "Server configuration",
                 ChatColor.GRAY + "Toggle features on/off",
@@ -82,7 +100,7 @@ public class MainMenuGUI implements Listener {
         }
 
         // Close button
-        gui.setItem(18, createItem(Material.BARRIER,
+        gui.setItem(40, createItem(Material.BARRIER,
             ChatColor.RED + "" + ChatColor.BOLD + "✗ Close",
             ChatColor.GRAY + "Exit menu"));
 
@@ -112,31 +130,52 @@ public class MainMenuGUI implements Listener {
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
 
         switch (slot) {
-            case 11: // Sell Crops
+            case 10: // Sell Crops
                 player.closeInventory();
                 playerGUIs.remove(player);
                 plugin.getSellGUI().openGUI(player);
                 break;
 
-            case 13: // My Stats
+            case 12: // My Stats
                 player.closeInventory();
                 playerGUIs.remove(player);
                 plugin.getStatsGUI().openGUI(player);
                 break;
 
-            case 15: // Leaderboard
+            case 14: // Leaderboard
                 player.closeInventory();
                 playerGUIs.remove(player);
                 plugin.getTopGUI().openGUI(player, 1);
                 break;
 
-            case 20: // My Settings (v0.9.0)
+            case 16: // Achievements
+                player.closeInventory();
+                playerGUIs.remove(player);
+                if (plugin.getAchievementGUI() != null) {
+                    plugin.getAchievementGUI().openGUI(player, 1);
+                } else {
+                    player.sendMessage(ChatColor.RED + "Achievements are not enabled!");
+                }
+                break;
+
+            case 28: // Daily Tasks
+                player.closeInventory();
+                playerGUIs.remove(player);
+                if (plugin.getDailyTaskManager() != null) {
+                    player.sendMessage(ChatColor.YELLOW + "Daily tasks feature coming soon!");
+                    // TODO: Open daily tasks GUI
+                } else {
+                    player.sendMessage(ChatColor.RED + "Daily tasks are not enabled!");
+                }
+                break;
+
+            case 30: // My Settings
                 player.closeInventory();
                 playerGUIs.remove(player);
                 plugin.getPlayerSettingsGUI().openGUI(player);
                 break;
 
-            case 22: // Admin Settings
+            case 32: // Admin Settings
                 if (player.hasPermission("farmcrops.settings")) {
                     player.closeInventory();
                     playerGUIs.remove(player);
@@ -144,7 +183,7 @@ public class MainMenuGUI implements Listener {
                 }
                 break;
 
-            case 18: // Close
+            case 40: // Close
                 player.closeInventory();
                 playerGUIs.remove(player);
                 break;

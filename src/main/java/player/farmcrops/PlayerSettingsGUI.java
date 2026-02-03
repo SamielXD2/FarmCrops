@@ -31,7 +31,7 @@ public class PlayerSettingsGUI implements Listener {
     }
     
     public void openGUI(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 27, 
+        Inventory gui = Bukkit.createInventory(null, 54, 
             ChatColor.AQUA + "⚙ My Settings");
         
         PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings()
@@ -39,7 +39,7 @@ public class PlayerSettingsGUI implements Listener {
         
         // Fill background
         ItemStack bgGlass = createItem(Material.BLACK_STAINED_GLASS_PANE, " ");
-        for (int i = 0; i < 27; i++) {
+        for (int i = 0; i < 54; i++) {
             gui.setItem(i, bgGlass);
         }
         
@@ -98,8 +98,53 @@ public class PlayerSettingsGUI implements Listener {
             "Displays tier, weight, and value"
         ));
         
+        // Achievement notifications toggle
+        gui.setItem(15, createToggleItem(
+            prefs.achievementNotifications ? Material.BELL : Material.IRON_BELL,
+            "Achievement Notifications",
+            prefs.achievementNotifications,
+            "Get notified for new achievements",
+            "Sound and message alerts"
+        ));
+        
+        // Broadcast toggle (show your achievements to server)
+        gui.setItem(16, createToggleItem(
+            prefs.broadcastAchievements ? Material.BEACON : Material.GLASS,
+            "Broadcast Achievements",
+            prefs.broadcastAchievements,
+            "Announce your achievements to server",
+            "Let everyone know your progress!"
+        ));
+        
+        // Action bar toggle
+        gui.setItem(28, createToggleItem(
+            prefs.showActionBar ? Material.EXPERIENCE_BOTTLE : Material.GLASS_BOTTLE,
+            "Action Bar Info",
+            prefs.showActionBar,
+            "Show harvest info above hotbar",
+            "Alternative to chat messages"
+        ));
+        
+        // Scoreboard toggle
+        gui.setItem(29, createToggleItem(
+            prefs.showScoreboard ? Material.PAINTING : Material.ITEM_FRAME,
+            "Scoreboard Display",
+            prefs.showScoreboard,
+            "Show farm stats on scoreboard",
+            "Live stats on the side"
+        ));
+        
+        // Title display toggle
+        gui.setItem(30, createToggleItem(
+            prefs.showTitle ? Material.NAME_TAG : Material.PAPER,
+            "Title Display",
+            prefs.showTitle,
+            "Show your equipped title",
+            "Display title to other players"
+        ));
+        
         // Info button
-        gui.setItem(16, createItem(Material.PAPER,
+        gui.setItem(49, createItem(Material.PAPER,
             ChatColor.YELLOW + "" + ChatColor.BOLD + "ℹ Info",
             ChatColor.GRAY + "These settings are personal",
             ChatColor.GRAY + "They only affect YOU",
@@ -108,7 +153,7 @@ public class PlayerSettingsGUI implements Listener {
         ));
         
         // Back button
-        gui.setItem(22, createItem(Material.ARROW,
+        gui.setItem(53, createItem(Material.ARROW,
             ChatColor.RED + "← Back to Menu",
             ChatColor.GRAY + "Return to main menu"
         ));
