@@ -239,19 +239,43 @@ public class PlayerSettingsGUI implements Listener {
                     ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
                 break;
                 
-            case 14: // Harvest messages
-                settings.toggleHarvestMessages(player);
-                message = "Harvest Messages: " + (settings.getPreferences(player.getUniqueId()).showHarvestMessages ?
+            case 15: // Achievement notifications
+                settings.toggleAchievementNotifications(player);
+                message = "Achievement Notifications: " + (settings.getPreferences(player.getUniqueId()).achievementNotifications ?
                     ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
                 break;
                 
-            case 22: // Back
+            case 16: // Broadcast achievements
+                settings.toggleBroadcastAchievements(player);
+                message = "Broadcast Achievements: " + (settings.getPreferences(player.getUniqueId()).broadcastAchievements ?
+                    ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
+                break;
+                
+            case 28: // Action bar
+                settings.toggleActionBar(player);
+                message = "Action Bar: " + (settings.getPreferences(player.getUniqueId()).showActionBar ?
+                    ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
+                break;
+                
+            case 29: // Scoreboard
+                settings.toggleScoreboard(player);
+                message = "Scoreboard: " + (settings.getPreferences(player.getUniqueId()).showScoreboard ?
+                    ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
+                break;
+                
+            case 30: // Title display
+                settings.toggleTitleDisplay(player);
+                message = "Title Display: " + (settings.getPreferences(player.getUniqueId()).showTitle ?
+                    ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
+                break;
+                
+            case 53: // Back button
                 player.closeInventory();
                 playerGUIs.remove(player);
                 plugin.getMainMenuGUI().openGUI(player);
                 return;
                 
-            case 16: // Info - do nothing
+            case 49: // Info button - do nothing
                 return;
         }
         
