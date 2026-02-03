@@ -12,7 +12,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 /**
- * v0.9.5 - Player Settings GUI (Fixed getTitle() for Paper 1.21)
+ * v0.9.6 - Player Settings GUI (FIXED ALL BUGS)
  * 
  * Allows players to customize their own farming experience:
  * - Auto-sell crops on harvest (requires farmcrops.autosell.use permission)
@@ -20,6 +20,9 @@ import java.util.*;
  * - Show/hide particles
  * - Enable/disable sounds
  * - Show/hide harvest chat messages
+ * - Achievement notifications (Premium only)
+ * - Broadcast achievements (Premium only)
+ * - Title display (Premium only)
  */
 public class PlayerSettingsGUI implements Listener {
     
@@ -36,6 +39,8 @@ public class PlayerSettingsGUI implements Listener {
         
         PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings()
             .getPreferences(player.getUniqueId());
+        
+        boolean isPremium = plugin.hasPremiumFeatures();
         
         // Fill background
         ItemStack bgGlass = createItem(Material.BLACK_STAINED_GLASS_PANE, " ");
@@ -98,23 +103,41 @@ public class PlayerSettingsGUI implements Listener {
             "Displays tier, weight, and value"
         ));
         
-        // Achievement notifications toggle
-        gui.setItem(15, createToggleItem(
-            prefs.achievementNotifications ? Material.BELL : Material.BELL,
-            "Achievement Notifications",
-            prefs.achievementNotifications,
-            "Get notified for new achievements",
-            "Sound and message alerts"
-        ));
+        // Achievement notifications toggle (Premium only or locked)
+        if (isPremium) {
+            gui.setItem(15, createToggleItem(
+                prefs.achievementNotifications ? Material.BELL : Material.BELL,
+                "Achievement Notifications",
+                prefs.achievementNotifications,
+                "Get notified for new achievements",
+                "Sound and message alerts"
+            ));
+        } else {
+            gui.setItem(15, createLockedItem(
+                Material.IRON_INGOT,
+                "Achievement Notifications",
+                "Get notified for new achievements",
+                "Premium Edition feature"
+            ));
+        }
         
-        // Broadcast toggle (show your achievements to server)
-        gui.setItem(16, createToggleItem(
-            prefs.broadcastAchievements ? Material.BEACON : Material.GLASS,
-            "Broadcast Achievements",
-            prefs.broadcastAchievements,
-            "Announce your achievements to server",
-            "Let everyone know your progress!"
-        ));
+        // Broadcast toggle (Premium only or locked)
+        if (isPremium) {
+            gui.setItem(16, createToggleItem(
+                prefs.broadcastAchievements ? Material.BEACON : Material.GLASS,
+                "Broadcast Achievements",
+                prefs.broadcastAchievements,
+                "Announce your achievements to server",
+                "Let everyone know your progress!"
+            ));
+        } else {
+            gui.setItem(16, createLockedItem(
+                Material.IRON_INGOT,
+                "Broadcast Achievements",
+                "Announce achievements to server",
+                "Premium Edition feature"
+            ));
+        }
         
         // Action bar toggle
         gui.setItem(28, createToggleItem(
@@ -134,25 +157,44 @@ public class PlayerSettingsGUI implements Listener {
             "Live stats on the side"
         ));
         
-        // Title display toggle
-        gui.setItem(30, createToggleItem(
-            prefs.showTitle ? Material.NAME_TAG : Material.PAPER,
-            "Title Display",
-            prefs.showTitle,
-            "Show your equipped title",
-            "Display title to other players"
+        // Title display toggle (Premium only or locked)
+        if (isPremium) {
+            gui.setItem(30, createToggleItem(
+                prefs.showTitle ? Material.NAME_TAG : Material.PAPER,
+                "Title Display",
+                prefs.showTitle,
+                "Show your equipped title",
+                "Display title to other players"
+            ));
+        } else {
+            gui.setItem(30, createLockedItem(
+                Material.IRON_INGOT,
+                "Title Display",
+                "Show your equipped title",
+                "Premium Edition feature"
+            ));
+        }
+        
+        // Edition info
+        gui.setItem(49, createItem(isPremium ? Material.NETHER_STAR : Material.PAPER,
+            isPremium ? 
+                ChatColor.GOLD + "" + ChatColor.BOLD + "⭐ Premium Edition" :
+                ChatColor.YELLOW + "" + ChatColor.BOLD + "💎 Lite Edition",
+            isPremium ?
+                ChatColor.GRAY + "You have access to all features!" :
+                ChatColor.GRAY + "Upgrade for more features:",
+            isPremium ?
+                "" :
+                ChatColor.GOLD + "  ⭐ Achievements",
+            isPremium ?
+                ChatColor.GREEN + "All settings save automatically" :
+                ChatColor.GOLD + "  ⭐ Daily Tasks",
+            isPremium ?
+                "" :
+                ChatColor.GOLD + "  ⭐ Collections & Titles"
         ));
         
-        // Info button
-        gui.setItem(49, createItem(Material.PAPER,
-            ChatColor.YELLOW + "" + ChatColor.BOLD + "ℹ Info",
-            ChatColor.GRAY + "These settings are personal",
-            ChatColor.GRAY + "They only affect YOU",
-            "",
-            ChatColor.GREEN + "All changes save automatically"
-        ));
-        
-        // Back button
+        // Back button (FIXED slot from 22 to 53)
         gui.setItem(53, createItem(Material.ARROW,
             ChatColor.RED + "← Back to Menu",
             ChatColor.GRAY + "Return to main menu"
@@ -188,6 +230,25 @@ public class PlayerSettingsGUI implements Listener {
         return item;
     }
     
+    private ItemStack createLockedItem(Material mat, String name, String description, String reason) {
+        ItemStack item = new ItemStack(mat);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + name + " " + ChatColor.DARK_GRAY + "LOCKED");
+            
+            List<String> lore = new ArrayList<>();
+            lore.add("");
+            lore.add(ChatColor.GRAY + description);
+            lore.add("");
+            lore.add(ChatColor.GOLD + "⭐ " + reason);
+            lore.add(ChatColor.YELLOW + "Upgrade to unlock!");
+            
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+    
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player)) return;
@@ -208,12 +269,14 @@ public class PlayerSettingsGUI implements Listener {
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
         
         PlayerSettings settings = plugin.getPlayerSettings();
+        boolean isPremium = plugin.hasPremiumFeatures();
         String message = "";
         
         switch (slot) {
             case 10: // Auto-sell
                 if (!player.hasPermission("farmcrops.autosell.use")) {
                     player.sendMessage(ChatColor.RED + "✗ You don't have permission to use Auto-Sell.");
+                    player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
                     return;
                 }
                 settings.toggleAutoSell(player);
@@ -245,14 +308,59 @@ public class PlayerSettingsGUI implements Listener {
                     ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
                 break;
                 
-            case 22: // Back
+            case 15: // Achievement notifications (Premium only)
+                if (!isPremium) {
+                    showPremiumMessage(player);
+                    return;
+                }
+                settings.toggleAchievementNotifications(player);
+                message = "Achievement Notifications: " + (settings.getPreferences(player.getUniqueId()).achievementNotifications ?
+                    ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
+                break;
+                
+            case 16: // Broadcast achievements (Premium only)
+                if (!isPremium) {
+                    showPremiumMessage(player);
+                    return;
+                }
+                settings.toggleBroadcastAchievements(player);
+                message = "Broadcast Achievements: " + (settings.getPreferences(player.getUniqueId()).broadcastAchievements ?
+                    ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
+                break;
+                
+            case 28: // Action bar
+                settings.toggleActionBar(player);
+                message = "Action Bar: " + (settings.getPreferences(player.getUniqueId()).showActionBar ?
+                    ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
+                break;
+                
+            case 29: // Scoreboard
+                settings.toggleScoreboard(player);
+                message = "Scoreboard: " + (settings.getPreferences(player.getUniqueId()).showScoreboard ?
+                    ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
+                break;
+                
+            case 30: // Title display (Premium only)
+                if (!isPremium) {
+                    showPremiumMessage(player);
+                    return;
+                }
+                settings.toggleTitleDisplay(player);
+                message = "Title Display: " + (settings.getPreferences(player.getUniqueId()).showTitle ?
+                    ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
+                break;
+                
+            case 53: // Back (FIXED from slot 22)
                 player.closeInventory();
                 playerGUIs.remove(player);
                 plugin.getMainMenuGUI().openGUI(player);
                 return;
                 
-            case 16: // Info - do nothing
+            case 49: // Info - do nothing
                 return;
+                
+            default:
+                return; // Unknown slot
         }
         
         if (!message.isEmpty()) {
@@ -263,6 +371,18 @@ public class PlayerSettingsGUI implements Listener {
         player.closeInventory();
         playerGUIs.remove(player);
         openGUI(player);
+    }
+    
+    private void showPremiumMessage(Player player) {
+        player.closeInventory();
+        player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 0.8f);
+        player.sendMessage("");
+        player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "⭐ PREMIUM FEATURE ⭐");
+        player.sendMessage(ChatColor.YELLOW + "This setting is only available in");
+        player.sendMessage(ChatColor.YELLOW + "FarmCrops " + ChatColor.GOLD + "Premium Edition" + ChatColor.YELLOW + "!");
+        player.sendMessage("");
+        player.sendMessage(ChatColor.GOLD + "Upgrade at: " + ChatColor.WHITE + "[Your store link here]");
+        player.sendMessage("");
     }
     
     private ItemStack createItem(Material mat, String name, String... lore) {
