@@ -1,1 +1,152 @@
+name: FarmCrops
+version: ${plugin.version}
+main: player.farmcrops.FarmCrops
+api-version: 1.20
+author: YourName
+description: Advanced farming plugin with holograms, auto-sell, and quests (${plugin.edition} Edition)
 
+# Vault is REQUIRED — plugin disables itself without it
+depend: [Vault]
+
+# FancyHolograms is optional — holograms just won't appear if missing
+softdepend: [FancyHolograms]
+
+commands:
+  sellcrops:
+    description: Open the crop selling GUI
+    usage: /sellcrops
+
+  farmstats:
+    description: View your farm statistics
+    usage: /farmstats [player]
+
+  farmtop:
+    description: View top farmers leaderboard
+    usage: /farmtop [page]
+
+  farmsettings:
+    description: Open admin settings menu
+    usage: /farmsettings
+    permission: farmcrops.settings
+
+  farmreload:
+    description: Reload the plugin configuration
+    usage: /farmreload
+    permission: farmcrops.reload
+
+  farm:
+    description: Open the main FarmCrops menu
+    usage: /farm
+
+  achievements:
+    description: View your achievements
+    usage: /achievements
+    aliases: [ach, achieve]
+
+  farmbackup:
+    description: Create a manual backup of all player data
+    usage: /farmbackup
+    permission: farmcrops.admin
+
+permissions:
+  farmcrops.*:
+    description: Gives access to all FarmCrops features
+    children:
+      farmcrops.admin: true
+      farmcrops.harvest: true
+      farmcrops.sell: true
+      farmcrops.stats: true
+      farmcrops.stats.others: true
+      farmcrops.top: true
+      farmcrops.settings: true
+      farmcrops.reload: true
+      farmcrops.menu: true
+      farmcrops.autosell.use: true
+      farmcrops.preview: true
+      farmcrops.achievements: true
+      farmcrops.achievements.claim: true
+      farmcrops.titles.use: true
+      farmcrops.titles.equip: true
+      farmcrops.dailytasks: true
+      farmcrops.collections: true
+      farmcrops.bypass.cooldown: true
+
+  farmcrops.admin:
+    description: Admin commands (reload, backup)
+    default: op
+
+  farmcrops.harvest:
+    description: Allow custom crop drops on harvest
+    default: true
+
+  farmcrops.sell:
+    description: Open the sell GUI
+    default: true
+
+  farmcrops.stats:
+    description: View own stats
+    default: true
+
+  farmcrops.stats.others:
+    description: View other players' stats
+    default: op
+
+  farmcrops.top:
+    description: View the leaderboard
+    default: true
+
+  farmcrops.settings:
+    description: Open the admin settings GUI
+    default: op
+
+  farmcrops.reload:
+    description: Reload config without restart
+    default: op
+
+  farmcrops.menu:
+    description: Open the main menu
+    default: true
+
+  farmcrops.autosell.use:
+    description: Allows using the auto-sell feature
+    default: false
+
+  farmcrops.preview:
+    description: See crop growth previews when looking at crops
+    default: true
+
+  farmcrops.achievements:
+    description: View achievements menu
+    default: true
+
+  farmcrops.achievements.claim:
+    description: Claim achievement rewards
+    default: true
+
+  farmcrops.titles.use:
+    description: View titles menu
+    default: true
+
+  farmcrops.titles.equip:
+    description: Equip and unequip titles
+    default: true
+
+  farmcrops.dailytasks:
+    description: Access daily tasks
+    default: true
+
+  farmcrops.collections:
+    description: View crop collections
+    default: true
+
+  farmcrops.bypass.cooldown:
+    description: Bypass action cooldowns
+    default: op
+
+  farmcrops.vip:
+    description: VIP perks (bonus multipliers, etc)
+    default: false
+
+  farmcrops.premium:
+    description: Premium features access
+    default: false
