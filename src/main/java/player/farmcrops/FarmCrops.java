@@ -38,8 +38,18 @@ public class FarmCrops extends JavaPlugin implements Listener {
 
         getLogger().info("========================================");
         getLogger().info("========================================");
-        getLogger().info("       FARMCROPS v0.9.9");
+        getLogger().info("       FARMCROPS v" + getDescription().getVersion());
         getLogger().info("  Weight-Based Crop Economy System");
+        
+        // Check if this is Premium or Lite
+        String edition = getConfig().getString("edition.type", "Unknown");
+        if ("Premium".equals(edition)) {
+            getLogger().info("         ⭐ PREMIUM EDITION ⭐");
+        } else if ("Lite".equals(edition)) {
+            getLogger().info("         💎 LITE EDITION 💎");
+            getLogger().info("  (Upgrade to Premium for more features!)");
+        }
+        
         getLogger().info("========================================");
         getLogger().info("========================================");
         getLogger().info("");
@@ -200,7 +210,8 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("");
 
         getLogger().info("========================================");
-        getLogger().info("  ✓✓✓ FARMCROPS v0.9.9 ENABLED ✓✓✓");
+        getLogger().info("  ✓✓✓ FARMCROPS v" + getDescription().getVersion() + " ENABLED ✓✓✓");
+        getLogger().info("  Edition: " + getConfig().getString("edition.type", "Unknown"));
         getLogger().info("========================================");
     }
 
