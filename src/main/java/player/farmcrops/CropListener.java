@@ -134,19 +134,19 @@ public class CropListener implements Listener {
             
             // Record stats
             plugin.getStatsManager().recordHarvest(player, block.getType(), tier, weight, price);
-            
-            // v1.0.0 Features - Daily Tasks, Collections, Achievements
-            if (plugin.getDailyTaskManager() != null) {
-                plugin.getDailyTaskManager().onCropHarvest(player, block.getType());
-            }
-            
-            if (plugin.getCollectionManager() != null) {
-                plugin.getCollectionManager().addCropToCollection(player, block.getType());
-            }
-            
-            if (plugin.getAchievementManager() != null) {
-                plugin.getAchievementManager().checkAchievements(player);
-            }
+        }
+
+        // v1.0.0 Features - Daily Tasks, Collections, Achievements (always run regardless of autosell)
+        if (plugin.getDailyTaskManager() != null) {
+            plugin.getDailyTaskManager().onCropHarvest(player, block.getType());
+        }
+        
+        if (plugin.getCollectionManager() != null) {
+            plugin.getCollectionManager().addCropToCollection(player, block.getType());
+        }
+        
+        if (plugin.getAchievementManager() != null) {
+            plugin.getAchievementManager().checkAchievements(player);
         }
 
         // Drop seeds
@@ -158,7 +158,7 @@ public class CropListener implements Listener {
             plugin.getConfig().getBoolean("holograms.harvest-flash", true)) {
             
             plugin.getHarvestHologramManager().flashHarvest(
-                dropLoc, player.getName(), tier, weight, price, formatName(block.getType())
+                dropLoc, player, tier, weight, price, formatName(block.getType())
             );
         }
 
