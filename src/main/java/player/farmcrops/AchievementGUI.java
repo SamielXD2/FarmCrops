@@ -45,79 +45,69 @@ public class AchievementGUI implements Listener {
             Material.WHEAT,
             "First Harvest",
             "Harvest your first crop!",
-            "$10.0"
+            "$10.00"
         );
         gui.setItem(slot++, firstHarvest);
         
-        // Farming Apprentice
+        // Century Farmer (100 harvests)
         ItemStack apprentice = createAchievementItem(
-            unlocked.contains("farming_apprentice"),
+            unlocked.contains("hundred_harvest"),
             Material.IRON_HOE,
-            "Farming Apprentice",
+            "Century Farmer",
             "Harvest 100 crops",
-            "$100.0"
+            "$100.00"
         );
         gui.setItem(slot++, apprentice);
         
-        // Farming Expert
+        // Master Farmer (1000 harvests)
         ItemStack expert = createAchievementItem(
-            unlocked.contains("farming_expert"),
+            unlocked.contains("thousand_harvest"),
             Material.DIAMOND_HOE,
-            "Farming Expert",
-            "Harvest 500 crops",
-            "$500.0"
+            "Master Farmer",
+            "Harvest 1,000 crops",
+            "$500.00"
         );
         gui.setItem(slot++, expert);
         
-        // Farming Master
+        // Legendary Farmer (10000 harvests)
         ItemStack master = createAchievementItem(
-            unlocked.contains("farming_master"),
+            unlocked.contains("ten_thousand_harvest"),
             Material.NETHERITE_HOE,
-            "Farming Master",
-            "Harvest 1,000 crops",
-            "$1,000.0"
+            "Legendary Farmer",
+            "Harvest 10,000 crops",
+            "$2,000.00"
         );
         gui.setItem(slot++, master);
         
-        // Rich Farmer
+        // Money Maker ($1,000 earned)
         ItemStack rich = createAchievementItem(
-            unlocked.contains("rich_farmer"),
+            unlocked.contains("first_thousand"),
             Material.GOLD_INGOT,
-            "Rich Farmer",
-            "Earn $10,000 from crops",
-            "Special Perk"
+            "Money Maker",
+            "Earn $1,000 from crops",
+            "$50.00"
         );
         gui.setItem(slot++, rich);
         
-        // Millionaire
+        // Rich Farmer ($10,000 earned)
         ItemStack millionaire = createAchievementItem(
-            unlocked.contains("millionaire"),
+            unlocked.contains("ten_thousand"),
             Material.DIAMOND,
-            "Millionaire",
-            "Earn $100,000 from crops",
-            "Exclusive Title"
+            "Rich Farmer",
+            "Earn $10,000 from crops",
+            "$250.00"
         );
         gui.setItem(slot++, millionaire);
         
-        // Lucky Farmer
+        // Crop Tycoon ($100,000 earned)
         ItemStack lucky = createAchievementItem(
-            unlocked.contains("lucky_farmer"),
+            unlocked.contains("hundred_thousand"),
             Material.EMERALD,
-            "Lucky Farmer",
-            "Get your first Legendary crop",
-            "$250.0"
+            "Crop Tycoon",
+            "Earn $100,000 from crops",
+            "$1,000.00"
         );
         gui.setItem(slot++, lucky);
-        
-        // Rare Collector
-        ItemStack collector = createAchievementItem(
-            unlocked.contains("rare_collector"),
-            Material.ENCHANTED_BOOK,
-            "Rare Collector",
-            "Collect 10 Legendary crops",
-            "$500.0"
-        );
-        gui.setItem(slot++, collector);
         
         // Bottom bar
         ItemStack grayGlass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
@@ -145,7 +135,7 @@ public class AchievementGUI implements Listener {
             ChatColor.GRAY + "Complete achievements to earn rewards!",
             "",
             ChatColor.YELLOW + "Unlocked: " + ChatColor.GREEN + unlocked.size(),
-            ChatColor.YELLOW + "Total: " + ChatColor.WHITE + "8"
+            ChatColor.YELLOW + "Total: " + ChatColor.WHITE + "7"
         ));
         infoBtn.setItemMeta(infoMeta);
         gui.setItem(49, infoBtn);
