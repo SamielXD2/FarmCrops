@@ -62,23 +62,27 @@ tiers:
   common:
     chance: 70
     multiplier: 1.0
-    color: "&7"
+    color: "&7"        # Gray
   uncommon:
     chance: 10
     multiplier: 1.2
-    color: "&a"
+    color: "&a"        # Green
   rare:
     chance: 12
     multiplier: 1.5
-    color: "&9"
+    color: "&9"        # Blue
   epic:
     chance: 6
     multiplier: 2.0
-    color: "&d"
+    color: "&5"        # Dark Purple/Violet
   legendary:
     chance: 2
     multiplier: 3.0
-    color: "&6"
+    color: "&6"        # Gold/Orange
+  mythic:
+    chance: 0
+    multiplier: 5.0
+    color: "&c"        # Red
 
 # Crop Prices (base price per kg)
 prices:
