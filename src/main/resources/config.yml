@@ -77,7 +77,8 @@ holograms:
   # Players can right-click crops to see tier/weight before harvesting
   # Requires permission: farmcrops.preview
   right-click-preview: true
-  preview-duration: 3
+  preview-duration: 3       # seconds the preview hologram stays visible
+  preview-cache-ttl: 60     # seconds the rolled preview is cached (harvest must happen within this)
 
 # ============================================
 # Leaderboard Settings
