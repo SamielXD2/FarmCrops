@@ -17,35 +17,57 @@ prices:
   cocoa_beans: 2.5
   sweet_berries: 2.2
 
+# Custom Crops - Add your own crops here!
+# Format: MATERIAL_NAME: price
+custom-crops:
+  enabled: true
+  crops:
+    # Add more crops as needed
+    # Example: PUMPKIN: 3.5
+
 # Auto-Sell Settings
 auto-sell:
   enabled: true
   require-permission: true  # Requires farmcrops.autosell permission
 
-# Quest System
-quests:
+# Daily Tasks System
+daily-tasks:
   enabled: true
-  daily-reset: true  # Reset quests at midnight
-  
-  # Example daily quests
-  daily-quests:
-    harvest-wheat:
+  tasks:
+    wheat_task:
       name: "Wheat Farmer"
-      description: "Harvest 100 wheat crops"
+      description: "Harvest 100 wheat crops today"
+      crop-type: "WHEAT"
       requirement: 100
-      crop-type: WHEAT
       rewards:
         money: 500
-        exp: 50
     
-    harvest-carrots:
+    carrot_task:
       name: "Carrot Collector"
-      description: "Harvest 75 carrot crops"
+      description: "Harvest 75 carrots today"
+      crop-type: "CARROTS"
       requirement: 75
-      crop-type: CARROTS
       rewards:
         money: 400
-        exp: 40
+    
+    potato_task:
+      name: "Potato Pro"
+      description: "Harvest 75 potatoes today"
+      crop-type: "POTATOES"
+      requirement: 75
+      rewards:
+        money: 400
+
+# Achievements System
+achievements:
+  enabled: true
+  broadcast: true  # Broadcast when player unlocks achievement
+
+# Collections System
+collections:
+  enabled: true
+  # Milestones: 50, 100, 250, 500, 1000, 2500, 5000, 10000
+  # Rewards automatically calculated: milestone * $0.50
 
 # Messages
 messages:
@@ -53,4 +75,3 @@ messages:
   no-permission: "§cYou don't have permission to do that!"
   autosell-enabled: "§aAuto-sell enabled!"
   autosell-disabled: "§cAuto-sell disabled."
-  quest-complete: "§a§lQUEST COMPLETE! §7%quest%"
