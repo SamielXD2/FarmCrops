@@ -17,7 +17,9 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * v0.9.5 - Auto-sell permission + halal-safe sounds
+ * v0.9.6 - FIXED: Melons now work properly!
+ * - Added special handling for melons (they're blocks, not Ageable crops)
+ * - Auto-sell permission + halal-safe sounds
  */
 public class CropListener implements Listener {
 
@@ -52,12 +54,32 @@ public class CropListener implements Listener {
         
         if (!player.hasPermission("farmcrops.harvest")) return;
 
+        // ========================================
+        // MELON HANDLING (Special case - melons are blocks, not Ageable!)
+        // ========================================
+        if (block.getType() == Material.MELON) {
+            // Melons don't have age - they're just blocks that spawn from stems
+            // Process them directly
+            processCropHarvest(player, block, event);
+            return;
+        }
+
+        // ========================================
+        // REGULAR CROPS (Wheat, Carrots, Potatoes, Beetroots)
+        // ========================================
         if (!(block.getBlockData() instanceof Ageable)) return;
         Ageable ageable = (Ageable) block.getBlockData();
         if (ageable.getAge() < ageable.getMaximumAge()) {
             return;
         }
 
+        processCropHarvest(player, block, event);
+    }
+
+    /**
+     * Process the harvest for any tracked crop (including melons!)
+     */
+    private void processCropHarvest(Player player, Block block, BlockBreakEvent event) {
         // Get player preferences
         PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings()
             .getPreferences(player.getUniqueId());
@@ -72,14 +94,14 @@ public class CropListener implements Listener {
         // Roll fresh stats for this crop
         tier  = rollTier();
 
-            double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
-            double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
-            weight = ThreadLocalRandom.current().nextDouble(minWeight, maxWeight);
-            weight = Math.round(weight * 100.0) / 100.0;
+        double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
+        double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
+        weight = ThreadLocalRandom.current().nextDouble(minWeight, maxWeight);
+        weight = Math.round(weight * 100.0) / 100.0;
 
-            double basePrice      = getCropPrice(block.getType());
-            double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
-            price  = basePrice * tierMultiplier * weight;
+        double basePrice      = getCropPrice(block.getType());
+        double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
+        price  = basePrice * tierMultiplier * weight;
 
         String color = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
 
@@ -151,8 +173,10 @@ public class CropListener implements Listener {
             plugin.getAchievementManager().checkAchievements(player);
         }
 
-        // Drop seeds
-        dropSeeds(block.getType(), dropLoc, player.getWorld());
+        // Drop seeds (melons don't drop seeds)
+        if (block.getType() != Material.MELON) {
+            dropSeeds(block.getType(), dropLoc, player.getWorld());
+        }
 
         // Harvest hologram flash
         if (prefs.showHolograms && 
@@ -201,6 +225,7 @@ public class CropListener implements Listener {
                 seedMaterial = Material.BEETROOT_SEEDS;
                 break;
             case MELON:
+                // Melons don't drop seeds from the melon block itself
                 return;
             default:
                 return;
