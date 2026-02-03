@@ -81,6 +81,20 @@ public class StatsManager {
     }
 
     /**
+     * Get total harvests for a player.
+     */
+    public int getTotalHarvests(UUID playerId) {
+        return getStats(playerId).totalHarvests;
+    }
+
+    /**
+     * Get total earnings for a player.
+     */
+    public double getTotalEarnings(UUID playerId) {
+        return getStats(playerId).totalEarnings;
+    }
+
+    /**
      * Get leaderboard sorted by the configured criteria.
      * Scans all saved player data files.
      */
