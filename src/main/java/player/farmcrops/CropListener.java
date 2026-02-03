@@ -17,7 +17,7 @@ import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * v0.9.0 - Updated with auto-sell and player preferences
+ * v0.9.5 - Auto-sell permission + halal-safe sounds
  */
 public class CropListener implements Listener {
 
@@ -80,9 +80,9 @@ public class CropListener implements Listener {
         Location dropLoc = block.getLocation().add(0.5, 0.5, 0.5);
 
         // ========================================
-        // v0.9.0 NEW: AUTO-SELL FEATURE
+        // v0.9.5 NEW: AUTO-SELL WITH PERMISSION
         // ========================================
-        if (prefs.autoSell) {
+        if (prefs.autoSell && player.hasPermission("farmcrops.autosell.use")) {
             // Give money directly
             plugin.getEconomy().depositPlayer(player, price);
             
@@ -148,8 +148,8 @@ public class CropListener implements Listener {
             spawnHarvestParticles(dropLoc, tier);
         }
         
-        // Sound (if not auto-sell, and player has sounds enabled)
-        if (!prefs.autoSell && prefs.playSounds) {
+        // Sound (if not auto-sell or no permission, and player has sounds enabled)
+        if ((!prefs.autoSell || !player.hasPermission("farmcrops.autosell.use")) && prefs.playSounds) {
             player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f);
         }
     }
