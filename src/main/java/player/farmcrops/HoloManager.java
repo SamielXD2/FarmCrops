@@ -215,6 +215,45 @@ public class HoloManager {
         removeGrowingCursor(player);
     }
     
+    /**
+     * v0.10.0 — Preview hologram shown only to the player who right-clicked.
+     * Floats above the crop for preview-duration seconds then auto-deletes.
+     */
+    public void flashPreview(Location blockLocation, Player player,
+                             String tier, double weight, double price, String cropName) {
+
+        String tierColor = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
+        ChatColor color = ChatColor.translateAlternateColorCodes('&', tierColor).charAt(0) == '§' ?
+            ChatColor.getByChar(tierColor.charAt(1)) : ChatColor.GRAY;
+
+        Location holoLoc = blockLocation.clone().add(0.5, 1.6, 0.5);
+        String holoName  = "preview_" + player.getUniqueId() + "_" + blockLocation.hashCode();
+
+        // Remove any existing preview hologram at this spot for this player
+        Hologram old = DHAPI.getHologram(holoName);
+        if (old != null) old.delete();
+
+        Hologram hologram = DHAPI.createHologram(holoName, holoLoc);
+
+        DHAPI.addHologramLine(hologram, color + "" + ChatColor.BOLD + tier.toUpperCase() + " " + cropName);
+        DHAPI.addHologramLine(hologram, ChatColor.WHITE + "" + weight + " kg " +
+            ChatColor.GOLD + "$" + String.format("%.2f", price));
+        DHAPI.addHologramLine(hologram, ChatColor.GRAY + "Break to harvest");
+
+        // Visible ONLY to this player
+        hologram.setDefaultVisibleState(false);
+        hologram.setShowPlayer(player);
+
+        // Auto-delete after preview-duration
+        int durationTicks = plugin.getConfig().getInt("holograms.preview-duration", 3) * 20;
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                hologram.delete();
+            }
+        }.runTaskLater(plugin, durationTicks);
+    }
+
     private boolean isCrop(Material material) {
         for (Material crop : CROP_TYPES) {
             if (crop == material) return true;
