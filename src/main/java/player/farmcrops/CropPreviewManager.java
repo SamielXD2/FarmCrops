@@ -65,7 +65,7 @@ public class CropPreviewManager implements Listener {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         if (event.getBlockFace() == null) return;
 
-        Block block = event.getBlock()
+        Block block = event.getBlock();
         if (block == null) return;
 
         // Master toggle
