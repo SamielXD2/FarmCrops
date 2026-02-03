@@ -11,10 +11,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.RayTraceResult;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,6 +24,7 @@ public class CropPreviewManager implements Listener {
 
     private final JavaPlugin plugin;
     private final Map<UUID, Hologram> activeHolograms = new HashMap<>();
+    private final Map<UUID, Block> lastLookedBlock = new HashMap<>();
     private final FancyHologramsPlugin fancyHolograms;
 
     public CropPreviewManager(JavaPlugin plugin) {
@@ -32,28 +33,58 @@ public class CropPreviewManager implements Listener {
     }
 
     // ────────────────────────────────────────
-    // Event: right-click on a crop block
+    // Event: Looking at a crop block
     // ────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onPlayerInteract(PlayerInteractEvent event) {
-        // Only care about right-click on a block
-        if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
-        if (event.getClickedBlock() == null) return;
-
-        Block block = event.getClickedBlock();
-
-        // Master toggle - check permission
-        if (!plugin.getConfig().getBoolean("holograms.right-click-preview", true)) return;
-
-        // Must be a tracked crop
-        if (!isTrackedCrop(block.getType())) return;
+    public void onPlayerMove(PlayerMoveEvent event) {
+        // Only check when player actually moves their head (not just position)
+        if (event.getFrom().getYaw() == event.getTo().getYaw() && 
+            event.getFrom().getPitch() == event.getTo().getPitch() &&
+            event.getFrom().getBlockX() == event.getTo().getBlockX() &&
+            event.getFrom().getBlockY() == event.getTo().getBlockY() &&
+            event.getFrom().getBlockZ() == event.getTo().getBlockZ()) {
+            return;
+        }
 
         Player player = event.getPlayer();
-
+        
         // Check if player has permission to see previews
         if (!player.hasPermission("farmcrops.preview")) {
-            return; // Silently ignore if no permission
+            return;
+        }
+        
+        // Master toggle
+        if (!plugin.getConfig().getBoolean("holograms.right-click-preview", true)) return;
+
+        // Ray trace to see what block player is looking at
+        RayTraceResult result = player.rayTraceBlocks(5.0); // 5 block range
+        if (result == null || result.getHitBlock() == null) {
+            // Not looking at any block, remove hologram if exists
+            Block lastBlock = lastLookedBlock.get(player.getUniqueId());
+            if (lastBlock != null) {
+                removeHologram(player);
+                lastLookedBlock.remove(player.getUniqueId());
+            }
+            return;
+        }
+        
+        Block block = result.getHitBlock();
+        
+        // Check if this is a different block than last time
+        Block lastBlock = lastLookedBlock.get(player.getUniqueId());
+        if (lastBlock != null && lastBlock.equals(block)) {
+            return; // Still looking at same block
+        }
+
+        // Must be a tracked crop
+        if (!isTrackedCrop(block.getType())) {
+            // Looking at non-crop, remove hologram
+            if (lastBlock != null) {
+                removeHologram(player);
+                lastLookedBlock.remove(player.getUniqueId());
+            }
+            return;
         }
 
         // Get crop stage info
@@ -62,6 +93,9 @@ public class CropPreviewManager implements Listener {
 
         int currentAge = ageable.getAge();
         int maxAge = ageable.getMaximumAge();
+
+        // Update the last looked block
+        lastLookedBlock.put(player.getUniqueId(), block);
 
         // Show the hologram
         showCropPreview(player, block.getLocation(), currentAge, maxAge, block.getType());
@@ -92,14 +126,7 @@ public class CropPreviewManager implements Listener {
         // Store reference
         activeHolograms.put(player.getUniqueId(), hologram);
 
-        // Auto-remove after 5 seconds
-        int duration = plugin.getConfig().getInt("holograms.preview-duration", 5);
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                removeHologram(player);
-            }
-        }.runTaskLater(plugin, duration * 20L);
+        // Note: Hologram will be removed when player looks away (handled in onPlayerMove)
     }
 
     private void removeHologram(Player player) {
@@ -143,5 +170,6 @@ public class CropPreviewManager implements Listener {
             hologram.deleteHologram();
         }
         activeHolograms.clear();
+        lastLookedBlock.clear();
     }
 }
