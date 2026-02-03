@@ -140,18 +140,25 @@
             <build>
                 <finalName>FarmCrops-Lite-${plugin.version}</finalName>
                 <plugins>
-                    <!-- Exclude premium-only classes from Lite version -->
+                    <!-- Use JAR plugin to exclude premium classes from final JAR -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-compiler-plugin</artifactId>
-                        <version>3.11.0</version>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>3.3.0</version>
                         <configuration>
                             <excludes>
-                                <exclude>**/AchievementManager.java</exclude>
-                                <exclude>**/AchievementGUI.java</exclude>
-                                <exclude>**/AchievementCommand.java</exclude>
-                                <exclude>**/DailyTaskManager.java</exclude>
-                                <exclude>**/CollectionManager.java</exclude>
+                                <!-- Exclude premium feature classes -->
+                                <exclude>**/AchievementManager.class</exclude>
+                                <exclude>**/AchievementManager$*.class</exclude>
+                                <exclude>**/AchievementGUI.class</exclude>
+                                <exclude>**/AchievementGUI$*.class</exclude>
+                                <exclude>**/AchievementCommand.class</exclude>
+                                <exclude>**/DailyTaskManager.class</exclude>
+                                <exclude>**/DailyTaskManager$*.class</exclude>
+                                <exclude>**/CollectionManager.class</exclude>
+                                <exclude>**/TitleManager.class</exclude>
+                                <exclude>**/TitleGUI.class</exclude>
+                                <exclude>**/TitleGUI$*.class</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
