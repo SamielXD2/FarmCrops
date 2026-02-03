@@ -28,7 +28,7 @@ public class PlaceholderProvider extends PlaceholderExpansion {
 
     @Override @NotNull public String getIdentifier() { return "farmcrops"; }
     @Override @NotNull public String getAuthor()     { return "Player"; }
-    @Override @NotNull public String getVersion()    { return "0.6.0"; }
+    @Override @NotNull public String getVersion()    { return "0.9.5"; }
     @Override public boolean persist()               { return true; }
 
     @Override
