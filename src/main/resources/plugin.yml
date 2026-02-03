@@ -22,6 +22,31 @@ commands:
     description: Open quest menu
     usage: /quest
     permission: farmcrops.quest
+    
+  sellcrops:
+    description: Open the crop selling GUI
+    usage: /sellcrops
+    
+  farmstats:
+    description: View your farm statistics
+    usage: /farmstats
+    
+  farmtop:
+    description: View top farmers leaderboard
+    usage: /farmtop
+    
+  farmsettings:
+    description: Open settings menu
+    usage: /farmsettings
+    
+  farmreload:
+    description: Reload the plugin configuration
+    usage: /farmreload
+    permission: farmcrops.admin
+    
+  farm:
+    description: Open the main FarmCrops menu
+    usage: /farm
 
 permissions:
   farmcrops.*:
