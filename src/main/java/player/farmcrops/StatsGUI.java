@@ -170,7 +170,7 @@ public class StatsGUI implements Listener {
         if (!playerGUIs.containsKey(player)) return;
 
         String title = InventoryUtil.getTitle(event.getView());
-        if (!title.contains("Stats")) return;
+        if (!title.contains("'s Stats")) return;
 
         event.setCancelled(true);
 
