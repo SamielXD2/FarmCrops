@@ -1,0 +1,56 @@
+# ════════════════════════════════════════════════════════════
+#                    FarmCrops Configuration
+# ════════════════════════════════════════════════════════════
+
+# Hologram Settings
+holograms:
+  right-click-preview: true  # Show crop info when right-clicking
+  preview-duration: 5  # How long hologram stays (seconds)
+
+# Crop Prices (for auto-sell)
+prices:
+  wheat: 2.0
+  carrot: 1.5
+  potato: 1.5
+  beetroot: 1.8
+  nether_wart: 3.0
+  cocoa_beans: 2.5
+  sweet_berries: 2.2
+
+# Auto-Sell Settings
+auto-sell:
+  enabled: true
+  require-permission: true  # Requires farmcrops.autosell permission
+
+# Quest System
+quests:
+  enabled: true
+  daily-reset: true  # Reset quests at midnight
+  
+  # Example daily quests
+  daily-quests:
+    harvest-wheat:
+      name: "Wheat Farmer"
+      description: "Harvest 100 wheat crops"
+      requirement: 100
+      crop-type: WHEAT
+      rewards:
+        money: 500
+        exp: 50
+    
+    harvest-carrots:
+      name: "Carrot Collector"
+      description: "Harvest 75 carrot crops"
+      requirement: 75
+      crop-type: CARROTS
+      rewards:
+        money: 400
+        exp: 40
+
+# Messages
+messages:
+  prefix: "§a§lFarmCrops §8» "
+  no-permission: "§cYou don't have permission to do that!"
+  autosell-enabled: "§aAuto-sell enabled!"
+  autosell-disabled: "§cAuto-sell disabled."
+  quest-complete: "§a§lQUEST COMPLETE! §7%quest%"
