@@ -29,7 +29,6 @@ public class ReloadCommand implements CommandExecutor {
 
         try {
             plugin.reloadConfig();
-            plugin.getCropPreviewManager().reloadTTL();
             sender.sendMessage(ChatColor.GREEN + "✓ Config reloaded successfully!");
             plugin.getLogger().info("Config reloaded by " + sender.getName());
         } catch (Exception e) {
