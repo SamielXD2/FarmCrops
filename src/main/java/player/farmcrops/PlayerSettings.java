@@ -65,6 +65,11 @@ public class PlayerSettings {
         prefs.showParticles = settingsConfig.getBoolean(path + "particles", true);
         prefs.playSounds = settingsConfig.getBoolean(path + "sounds", true);
         prefs.showHarvestMessages = settingsConfig.getBoolean(path + "harvest-messages", true);
+        prefs.achievementNotifications = settingsConfig.getBoolean(path + "achievement-notifications", true);
+        prefs.broadcastAchievements = settingsConfig.getBoolean(path + "broadcast-achievements", true);
+        prefs.showActionBar = settingsConfig.getBoolean(path + "action-bar", false);
+        prefs.showScoreboard = settingsConfig.getBoolean(path + "scoreboard", false);
+        prefs.showTitle = settingsConfig.getBoolean(path + "title", true);
         
         cache.put(uuid, prefs);
         return prefs;
@@ -77,6 +82,11 @@ public class PlayerSettings {
         settingsConfig.set(path + "particles", prefs.showParticles);
         settingsConfig.set(path + "sounds", prefs.playSounds);
         settingsConfig.set(path + "harvest-messages", prefs.showHarvestMessages);
+        settingsConfig.set(path + "achievement-notifications", prefs.achievementNotifications);
+        settingsConfig.set(path + "broadcast-achievements", prefs.broadcastAchievements);
+        settingsConfig.set(path + "action-bar", prefs.showActionBar);
+        settingsConfig.set(path + "scoreboard", prefs.showScoreboard);
+        settingsConfig.set(path + "title", prefs.showTitle);
         
         cache.put(uuid, prefs);
         saveSettings();
@@ -125,5 +135,10 @@ public class PlayerSettings {
         public boolean showParticles = true;
         public boolean playSounds = true;
         public boolean showHarvestMessages = true;
+        public boolean achievementNotifications = true;
+        public boolean broadcastAchievements = true;
+        public boolean showActionBar = false;
+        public boolean showScoreboard = false;
+        public boolean showTitle = true;
     }
 }
