@@ -17,6 +17,10 @@
         <!-- Default version -->
         <plugin.version>1.0.0</plugin.version>
         <plugin.edition>Premium</plugin.edition>
+        <enable.achievements>true</enable.achievements>
+        <enable.dailytasks>true</enable.dailytasks>
+        <enable.collections>true</enable.collections>
+        <enable.autosave>true</enable.autosave>
     </properties>
 
     <profiles>
@@ -29,6 +33,10 @@
             <properties>
                 <plugin.version>1.0.0</plugin.version>
                 <plugin.edition>Premium</plugin.edition>
+                <enable.achievements>true</enable.achievements>
+                <enable.dailytasks>true</enable.dailytasks>
+                <enable.collections>true</enable.collections>
+                <enable.autosave>true</enable.autosave>
             </properties>
             <build>
                 <finalName>FarmCrops-Premium-${plugin.version}</finalName>
@@ -41,6 +49,10 @@
             <properties>
                 <plugin.version>0.9.0</plugin.version>
                 <plugin.edition>Lite</plugin.edition>
+                <enable.achievements>false</enable.achievements>
+                <enable.dailytasks>false</enable.dailytasks>
+                <enable.collections>false</enable.collections>
+                <enable.autosave>true</enable.autosave>
             </properties>
             <build>
                 <finalName>FarmCrops-Lite-${plugin.version}</finalName>
