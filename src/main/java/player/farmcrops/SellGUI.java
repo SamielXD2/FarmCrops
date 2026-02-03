@@ -1,5 +1,6 @@
 package player.farmcrops;
 
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -227,8 +228,7 @@ public class SellGUI implements Listener {
 
         if (!playerGUIs.containsKey(player)) return;
 
-        String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-            .serialize(event.getView().title());
+        String title = PlainTextComponentSerializer.plainText().serialize(event.getView().title());
         if (!title.equals("Sell Crops")) return;
 
         event.setCancelled(true);
@@ -304,8 +304,7 @@ public class SellGUI implements Listener {
 
         if (!playerGUIs.containsKey(player)) return;
 
-        String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-            .serialize(event.getView().title());
+        String title = PlainTextComponentSerializer.plainText().serialize(event.getView().title());
         if (!title.equals("Sell Crops")) return;
 
         List<CropEntry> entries = playerCropData.get(player);

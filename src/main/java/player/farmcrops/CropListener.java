@@ -63,21 +63,14 @@ public class CropListener implements Listener {
             .getPreferences(player.getUniqueId());
 
         // ========================================
-        // v0.10.0: USE CACHED PREVIEW IF AVAILABLE
+        // CROP STATS CALCULATION
         // ========================================
         String tier;
         double weight;
         double price;
 
-        CropPreviewManager.PreviewData cached = plugin.getCropPreviewManager().consumePreview(block.getLocation());
-        if (cached != null) {
-            // Player previewed this crop — honour the cached roll
-            tier   = cached.tier;
-            weight = cached.weight;
-            price  = cached.price;
-        } else {
-            // No preview — roll fresh
-            tier  = rollTier();
+        // Roll fresh stats for this crop
+        tier  = rollTier();
 
             double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
             double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
@@ -87,7 +80,6 @@ public class CropListener implements Listener {
             double basePrice      = getCropPrice(block.getType());
             double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
             price  = basePrice * tierMultiplier * weight;
-        }
 
         String color = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
 
@@ -147,7 +139,9 @@ public class CropListener implements Listener {
         // Drop seeds
         dropSeeds(block.getType(), dropLoc, player.getWorld());
 
-        // Harvest hologram (check player + server settings)
+        // Harvest hologram disabled (HoloManager removed - using CropPreviewManager for right-click only)
+        // TODO: Implement harvest flash with CropPreviewManager if needed
+        /*
         if (prefs.showHolograms && 
             plugin.isHoloEnabled() && 
             plugin.getConfig().getBoolean("holograms.harvest-flash", true)) {
@@ -156,6 +150,7 @@ public class CropListener implements Listener {
                 dropLoc, player.getName(), tier, weight, price, formatName(block.getType())
             );
         }
+        */
 
         // Particles (check player + server settings)
         if (prefs.showParticles && 
@@ -242,26 +237,26 @@ public class CropListener implements Listener {
 
         switch (tier.toLowerCase()) {
             case "common":
-                particleType = Particle.SMOKE;
+                particleType = Particle.SMOKE_NORMAL;
                 break;
             case "rare":
-                particleType = Particle.DUST;
+                particleType = Particle.REDSTONE;
                 particleData = new Particle.DustOptions(Color.AQUA, 1.5f);
                 break;
             case "epic":
-                particleType = Particle.DUST;
+                particleType = Particle.REDSTONE;
                 particleData = new Particle.DustOptions(Color.PURPLE, 1.5f);
                 break;
             case "legendary":
-                particleType = Particle.DUST;
+                particleType = Particle.REDSTONE;
                 particleData = new Particle.DustOptions(Color.ORANGE, 2.0f);
                 break;
             case "mythic":
-                particleType = Particle.DUST;
+                particleType = Particle.REDSTONE;
                 particleData = new Particle.DustOptions(Color.RED, 2.5f);
                 break;
             default:
-                particleType = Particle.SMOKE;
+                particleType = Particle.SMOKE_NORMAL;
                 break;
         }
 

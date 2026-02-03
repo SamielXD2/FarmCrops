@@ -1,5 +1,6 @@
 package player.farmcrops;
 
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -97,8 +98,7 @@ public class MainMenuGUI implements Listener {
 
         if (!playerGUIs.containsKey(player)) return;
 
-        String title = net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer.plainText()
-            .serialize(event.getView().title());
+        String title = PlainTextComponentSerializer.plainText().serialize(event.getView().title());
         if (!title.contains("FarmCrops Menu")) return;
 
         event.setCancelled(true);

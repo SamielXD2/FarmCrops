@@ -81,7 +81,7 @@ public class CropPreviewManager implements Listener {
         TextHologramData hologramData = new TextHologramData("crop-preview-" + player.getUniqueId(), hologramLoc);
         hologramData.setText(java.util.Collections.singletonList(text)); // FancyHolograms expects List<String>
         hologramData.setTextShadow(true);
-        hologramData.setBackground(de.oliver.fancyholograms.api.data.TextHologramData.Background.FULL);
+        hologramData.setBackground(TextHologramData.Background.FULL);
         
         // Create and show hologram
         Hologram hologram = fancyHolograms.getHologramManager().create(hologramData);
