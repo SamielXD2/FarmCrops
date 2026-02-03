@@ -63,14 +63,21 @@ public class CropListener implements Listener {
             .getPreferences(player.getUniqueId());
 
         // ========================================
-        // CROP STATS CALCULATION
+        // v0.10.0: USE CACHED PREVIEW IF AVAILABLE
         // ========================================
         String tier;
         double weight;
         double price;
 
-        // Roll fresh stats for this crop
-        tier  = rollTier();
+        CropPreviewManager.PreviewData cached = plugin.getCropPreviewManager().consumePreview(block.getLocation());
+        if (cached != null) {
+            // Player previewed this crop — honour the cached roll
+            tier   = cached.tier;
+            weight = cached.weight;
+            price  = cached.price;
+        } else {
+            // No preview — roll fresh
+            tier  = rollTier();
 
             double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
             double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
@@ -80,6 +87,7 @@ public class CropListener implements Listener {
             double basePrice      = getCropPrice(block.getType());
             double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
             price  = basePrice * tierMultiplier * weight;
+        }
 
         String color = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
 
@@ -234,26 +242,26 @@ public class CropListener implements Listener {
 
         switch (tier.toLowerCase()) {
             case "common":
-                particleType = Particle.SMOKE_NORMAL;
+                particleType = Particle.SMOKE;
                 break;
             case "rare":
-                particleType = Particle.REDSTONE;
+                particleType = Particle.DUST;
                 particleData = new Particle.DustOptions(Color.AQUA, 1.5f);
                 break;
             case "epic":
-                particleType = Particle.REDSTONE;
+                particleType = Particle.DUST;
                 particleData = new Particle.DustOptions(Color.PURPLE, 1.5f);
                 break;
             case "legendary":
-                particleType = Particle.REDSTONE;
+                particleType = Particle.DUST;
                 particleData = new Particle.DustOptions(Color.ORANGE, 2.0f);
                 break;
             case "mythic":
-                particleType = Particle.REDSTONE;
+                particleType = Particle.DUST;
                 particleData = new Particle.DustOptions(Color.RED, 2.5f);
                 break;
             default:
-                particleType = Particle.SMOKE_NORMAL;
+                particleType = Particle.SMOKE;
                 break;
         }
 

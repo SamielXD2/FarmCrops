@@ -14,7 +14,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private static FarmCrops instance;
     private Economy economy;
     private SellGUI sellGUI;
-    // HoloManager removed - using CropPreviewManager with FancyHolograms
+    private HoloManager holoManager;
     private StatsManager statsManager;
     private SettingsGUI settingsGUI;
     private MainMenuGUI mainMenuGUI;
@@ -129,20 +129,25 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm");
         getLogger().info("");
 
-        // PlaceholderAPI support temporarily disabled
-        getLogger().info("  PlaceholderAPI integration: Disabled");
+        // PlaceholderAPI
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new PlaceholderProvider(this).register();
+            getLogger().info("✓ PlaceholderAPI integration DISABLED");
+        } else {
+            getLogger().info("  PlaceholderAPI not found — placeholder support disabled");
+        }
         getLogger().info("");
 
-        // FancyHolograms
-        if (Bukkit.getPluginManager().getPlugin("FancyHolograms") != null) {
-            cropPreviewManager = new CropPreviewManager(this);
-            Bukkit.getPluginManager().registerEvents(cropPreviewManager, this);
+        // DecentHolograms
+        if (Bukkit.getPluginManager().getPlugin("DecentHolograms") != null) {
+            holoManager = new HoloManager(this);
             holoEnabled = true;
-            getLogger().info("✓ FancyHolograms integration active");
-            getLogger().info("  - Right-click preview: " + getConfig().getBoolean("holograms.right-click-preview"));
-            getLogger().info("  - Preview duration: " + getConfig().getInt("holograms.preview-duration") + "s");
+            getLogger().info("✓ DecentHolograms integration active");
+            getLogger().info("  - Harvest Flash: " + getConfig().getBoolean("holograms.harvest-flash"));
+            getLogger().info("  - Growing Cursor: " + getConfig().getBoolean("holograms.growing-cursor"));
+            getLogger().info("  - Particles: " + getConfig().getBoolean("holograms.particles"));
         } else {
-            getLogger().info("  FancyHolograms not found — hologram support disabled");
+            getLogger().info("  DecentHolograms not found — hologram support disabled");
         }
         getLogger().info("");
 
