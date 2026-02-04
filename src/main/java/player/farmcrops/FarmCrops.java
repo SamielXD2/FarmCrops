@@ -255,20 +255,27 @@ public class FarmCrops extends JavaPlugin implements Listener {
      * Detect if this is Premium or Lite edition
      */
     private void detectEdition() {
-        // Check config first
-        String editionType = getConfig().getString("edition.type", "Lite");
-        isPremiumEdition = editionType.equalsIgnoreCase("Premium");
-        
-        // Verify premium classes exist if Premium edition
-        if (isPremiumEdition) {
-            try {
-                // Try to load a premium-specific class
-                Class.forName("player.farmcrops.AchievementManager");
-                hasPremiumClasses = true;
-            } catch (ClassNotFoundException e) {
-                hasPremiumClasses = false;
-            }
+        // First, try to detect by checking if premium classes are available
+        try {
+            Class.forName("player.farmcrops.AchievementManager");
+            Class.forName("player.farmcrops.DailyTaskManager");
+            Class.forName("player.farmcrops.CollectionManager");
+            hasPremiumClasses = true;
+            isPremiumEdition = true;
+            getLogger().info("[Edition Detection] Premium classes found - PREMIUM EDITION");
+        } catch (ClassNotFoundException e) {
+            hasPremiumClasses = false;
+            isPremiumEdition = false;
+            getLogger().info("[Edition Detection] Premium classes not found - LITE EDITION");
         }
+        
+        // Update config to match detected edition
+        String detectedEdition = isPremiumEdition ? "Premium" : "Lite";
+        getConfig().set("edition.type", detectedEdition);
+        saveConfig();
+        
+        getLogger().info("[Edition Detection] Final: " + (isPremiumEdition ? "PREMIUM" : "LITE") + 
+                         " (Classes: " + (hasPremiumClasses ? "YES" : "NO") + ")");
     }
 
     /**
