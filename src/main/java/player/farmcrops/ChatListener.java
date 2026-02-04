@@ -21,9 +21,9 @@ public class ChatListener implements Listener {
     
     /**
      * Add equipped title to chat messages
-     * Priority is HIGH to run after other plugins but before final formatting
+     * Priority is LOWEST to run BEFORE other chat plugins like EssentialsX
      */
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onPlayerChat(AsyncPlayerChatEvent event) {
         // Only run in Premium edition with title system
         if (!plugin.isPremiumEdition() || plugin.getTitleManager() == null) {
@@ -33,24 +33,24 @@ public class ChatListener implements Listener {
         Player player = event.getPlayer();
         TitleManager titleManager = plugin.getTitleManager();
         
+        // Check if player has a title equipped and wants to show it
+        PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings().getPreferences(player.getUniqueId());
+        if (!prefs.showTitle) {
+            return; // Player has titles disabled
+        }
+        
         // Check if player has a title equipped
         if (titleManager.hasTitle(player.getUniqueId())) {
             String title = titleManager.getEquippedTitle(player.getUniqueId());
+            if (title == null || title.isEmpty()) {
+                return;
+            }
+            
             String coloredTitle = ChatColor.translateAlternateColorCodes('&', title);
             
-            // Get current format (usually "%1$s: %2$s" or similar from EssentialsX)
-            String currentFormat = event.getFormat();
-            
-            // Insert title before player name
-            // If format contains %1$s (player name placeholder), add title there
-            if (currentFormat.contains("%1$s")) {
-                // Replace %1$s with [Title] %1$s
-                String newFormat = currentFormat.replace("%1$s", coloredTitle + ChatColor.RESET + " %1$s");
-                event.setFormat(newFormat);
-            } else {
-                // Fallback: just prepend title to the format
-                event.setFormat(coloredTitle + ChatColor.RESET + " " + currentFormat);
-            }
+            // Modify the player's display name to include title
+            String originalDisplayName = player.getDisplayName();
+            player.setDisplayName(coloredTitle + " " + ChatColor.RESET + originalDisplayName);
         }
     }
 }
