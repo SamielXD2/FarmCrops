@@ -17,4 +17,9 @@ public class DailyTaskGUI implements Listener {
     public void openGUI(Player player) {
         player.sendMessage("§c✗ Daily Tasks is a Premium feature!");
     }
+    
+    public void openDailyTasksGUI(Player player) {
+        player.sendMessage("§c✗ Daily Tasks is a Premium feature!");
+        player.sendMessage("§eUpgrade to Premium to unlock daily tasks!");
+    }
 }
