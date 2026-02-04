@@ -43,6 +43,11 @@ commands:
     usage: /achievements
     aliases: [ach, achieve]
 
+  dailytasks:
+    description: View your daily farming tasks
+    usage: /dailytasks
+    aliases: [tasks, daily]
+
   farmbackup:
     description: Create a manual backup of all player data
     usage: /farmbackup
