@@ -31,4 +31,8 @@ public class TitleManager {
     public String getTitleForAchievement(String achievementId) {
         return null;
     }
+    
+    public boolean hasTitle(UUID uuid) {
+        return false;
+    }
 }
