@@ -407,9 +407,9 @@ public class FarmCrops extends JavaPlugin implements Listener {
         // Initialize scoreboard if enabled
         if (scoreboardManager != null) {
             // Check if player has scoreboard enabled in their settings  
-            boolean scoreboardEnabled = playerSettings.getScoreboardEnabled(uuid);
-            if (scoreboardEnabled) {
-                scoreboardManager.createScoreboard(player);
+            PlayerSettings.PlayerPreferences prefs = playerSettings.getPreferences(uuid);
+            if (prefs.showScoreboard) {
+                scoreboardManager.showScoreboard(player);
             }
         }
     }
