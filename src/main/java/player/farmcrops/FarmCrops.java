@@ -466,4 +466,18 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public ScoreboardManager getScoreboardManager() { return scoreboardManager; }
     public ActionBarManager getActionBarManager() { return actionBarManager; }
     public MessageHandler getMessageHandler()  { return messageHandler; }
-    public ChatListener getChatListener()      { return c
+    public ChatListener getChatListener()      { return chatListener; }
+    
+    // Edition info
+    public boolean isPremiumEdition()          { return isPremiumEdition; }
+    public boolean hasPremiumFeatures()        { return isPremiumEdition && hasPremiumClasses; }
+    
+    // Premium Features (may return null in Lite version!)
+    public AchievementManager getAchievementManager() { return achievementManager; }
+    public AchievementGUI getAchievementGUI() { return achievementGUI; }
+    public DailyTaskManager getDailyTaskManager() { return dailyTaskManager; }
+    public CollectionManager getCollectionManager() { return collectionManager; }
+    public TitleManager getTitleManager() { return titleManager; }
+    public TitleGUI getTitleGUI() { return titleGUI; }
+    public DailyTaskGUI getDailyTaskGUI() { return dailyTaskGUI; }
+}
