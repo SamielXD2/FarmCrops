@@ -123,6 +123,28 @@
             </properties>
             <build>
                 <finalName>FarmCrops-Premium-${plugin.version}</finalName>
+                <plugins>
+                    <!-- Add premium source directory -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.4.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-premium-source</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/premium</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
             </build>
         </profile>
 
@@ -140,25 +162,46 @@
             <build>
                 <finalName>FarmCrops-Lite-${plugin.version}</finalName>
                 <plugins>
-                    <!-- Use JAR plugin to exclude premium classes from final JAR -->
+                    <!-- Configure compiler to use Lite source directory -->
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <version>3.4.0</version>
+                        <executions>
+                            <execution>
+                                <id>add-lite-source</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>add-source</goal>
+                                </goals>
+                                <configuration>
+                                    <sources>
+                                        <source>src/lite</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    
+                    <!-- Exclude premium source files from compilation -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-jar-plugin</artifactId>
-                        <version>3.3.0</version>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <version>3.11.0</version>
                         <configuration>
+                            <source>17</source>
+                            <target>17</target>
                             <excludes>
-                                <!-- Exclude premium feature classes -->
-                                <exclude>**/AchievementManager.class</exclude>
-                                <exclude>**/AchievementManager$*.class</exclude>
-                                <exclude>**/AchievementGUI.class</exclude>
-                                <exclude>**/AchievementGUI$*.class</exclude>
-                                <exclude>**/AchievementCommand.class</exclude>
-                                <exclude>**/DailyTaskManager.class</exclude>
-                                <exclude>**/DailyTaskManager$*.class</exclude>
-                                <exclude>**/CollectionManager.class</exclude>
-                                <exclude>**/TitleManager.class</exclude>
-                                <exclude>**/TitleGUI.class</exclude>
-                                <exclude>**/TitleGUI$*.class</exclude>
+                                <!-- Exclude premium source files from Lite build -->
+                                <exclude>**/AchievementManager.java</exclude>
+                                <exclude>**/AchievementGUI.java</exclude>
+                                <exclude>**/AchievementCommand.java</exclude>
+                                <exclude>**/DailyTaskManager.java</exclude>
+                                <exclude>**/DailyTaskGUI.java</exclude>
+                                <exclude>**/DailyTasksCommand.java</exclude>
+                                <exclude>**/CollectionManager.java</exclude>
+                                <exclude>**/TitleManager.java</exclude>
+                                <exclude>**/TitleGUI.java</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
