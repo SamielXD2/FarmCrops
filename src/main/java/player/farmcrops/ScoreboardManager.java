@@ -123,14 +123,14 @@ public class ScoreboardManager {
             
             // Total Stats
             setScore(objective, ChatColor.AQUA + "Total Stats:", line--);
-            setScore(objective, ChatColor.WHITE + "  Crops: " + ChatColor.GREEN + numberFormat.format(stats.totalHarvested), line--);
-            setScore(objective, ChatColor.WHITE + "  Money: " + ChatColor.GOLD + "$" + moneyFormat.format(stats.totalEarned), line--);
+            setScore(objective, ChatColor.WHITE + "  Crops: " + ChatColor.GREEN + numberFormat.format(stats.totalHarvests), line--);
+            setScore(objective, ChatColor.WHITE + "  Money: " + ChatColor.GOLD + "$" + moneyFormat.format(stats.totalEarnings), line--);
             setScore(objective, "", line--); // Spacer
             
             // Best Crop
-            if (stats.bestCropValue > 0) {
+            if (stats.bestDropValue > 0) {
                 setScore(objective, ChatColor.LIGHT_PURPLE + "Best Crop:", line--);
-                setScore(objective, ChatColor.WHITE + "  " + ChatColor.GOLD + "$" + moneyFormat.format(stats.bestCropValue), line--);
+                setScore(objective, ChatColor.WHITE + "  " + ChatColor.GOLD + "$" + moneyFormat.format(stats.bestDropValue), line--);
             }
             
             // Footer
