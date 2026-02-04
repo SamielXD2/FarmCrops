@@ -115,6 +115,14 @@ public class ScoreboardManager {
             // Header
             setScore(objective, ChatColor.GRAY + "━━━━━━━━━━━━━━", line--);
             
+            // Current Balance (from Vault)
+            if (plugin.getEconomy() != null) {
+                double balance = plugin.getEconomy().getBalance(player);
+                setScore(objective, ChatColor.GOLD + "Balance:", line--);
+                setScore(objective, ChatColor.WHITE + "  $" + ChatColor.GREEN + moneyFormat.format(balance), line--);
+                setScore(objective, "", line--); // Spacer
+            }
+            
             // Session Stats
             setScore(objective, ChatColor.YELLOW + "Session:", line--);
             setScore(objective, ChatColor.WHITE + "  Crops: " + ChatColor.GREEN + numberFormat.format(sessionCropCount), line--);
@@ -122,9 +130,9 @@ public class ScoreboardManager {
             setScore(objective, "", line--); // Spacer
             
             // Total Stats
-            setScore(objective, ChatColor.AQUA + "Total Stats:", line--);
+            setScore(objective, ChatColor.AQUA + "All-Time:", line--);
             setScore(objective, ChatColor.WHITE + "  Crops: " + ChatColor.GREEN + numberFormat.format(stats.totalHarvests), line--);
-            setScore(objective, ChatColor.WHITE + "  Money: " + ChatColor.GOLD + "$" + moneyFormat.format(stats.totalEarnings), line--);
+            setScore(objective, ChatColor.WHITE + "  Earned: " + ChatColor.GOLD + "$" + moneyFormat.format(stats.totalEarnings), line--);
             setScore(objective, "", line--); // Spacer
             
             // Best Crop
