@@ -255,7 +255,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
      * Detect if this is Premium or Lite edition
      */
     private void detectEdition() {
-        // First, try to detect by checking if premium classes are available
+        // Detect edition by checking if premium classes are available
         try {
             Class.forName("player.farmcrops.AchievementManager");
             Class.forName("player.farmcrops.DailyTaskManager");
@@ -269,13 +269,9 @@ public class FarmCrops extends JavaPlugin implements Listener {
             getLogger().info("[Edition Detection] Premium classes not found - LITE EDITION");
         }
         
-        // Update config to match detected edition
-        String detectedEdition = isPremiumEdition ? "Premium" : "Lite";
-        getConfig().set("edition.type", detectedEdition);
-        saveConfig();
-        
-        getLogger().info("[Edition Detection] Final: " + (isPremiumEdition ? "PREMIUM" : "LITE") + 
-                         " (Classes: " + (hasPremiumClasses ? "YES" : "NO") + ")");
+        // DO NOT save to config - let Maven variables handle it
+        getLogger().info("[Edition Detection] Running as: " + (isPremiumEdition ? "PREMIUM" : "LITE") + 
+                         " Edition v" + getDescription().getVersion());
     }
 
     /**
@@ -410,6 +406,24 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
+        
+        // Notify OPs about lite edition
+        if (!isPremiumEdition && player.isOp()) {
+            Bukkit.getScheduler().runTaskLater(this, () -> {
+                player.sendMessage("");
+                player.sendMessage(ChatColor.GOLD + "═══════════════════════════════════");
+                player.sendMessage(ChatColor.YELLOW + "ℹ " + ChatColor.GRAY + "FarmCrops " + ChatColor.YELLOW + "LITE Edition");
+                player.sendMessage(ChatColor.GRAY + "You're running the free version");
+                player.sendMessage("");
+                player.sendMessage(ChatColor.GRAY + "Upgrade to " + ChatColor.GOLD + "PREMIUM" + ChatColor.GRAY + " to unlock:");
+                player.sendMessage(ChatColor.YELLOW + "  • " + ChatColor.WHITE + "Achievements System");
+                player.sendMessage(ChatColor.YELLOW + "  • " + ChatColor.WHITE + "Daily Tasks & Rewards");
+                player.sendMessage(ChatColor.YELLOW + "  • " + ChatColor.WHITE + "Collections Tracking");
+                player.sendMessage(ChatColor.YELLOW + "  • " + ChatColor.WHITE + "Custom Titles");
+                player.sendMessage(ChatColor.GOLD + "═══════════════════════════════════");
+                player.sendMessage("");
+            }, 60L); // 3 seconds after join
+        }
         
         // Initialize scoreboard if enabled
         if (scoreboardManager != null) {
