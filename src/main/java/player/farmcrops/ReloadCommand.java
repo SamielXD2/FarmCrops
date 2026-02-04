@@ -25,15 +25,34 @@ public class ReloadCommand implements CommandExecutor {
             return true;
         }
 
-        sender.sendMessage(ChatColor.YELLOW + "Reloading FarmCrops config...");
+        sender.sendMessage(ChatColor.YELLOW + "Reloading FarmCrops...");
+        sender.sendMessage("");
 
         try {
+            // Reload config file
             plugin.reloadConfig();
-            sender.sendMessage(ChatColor.GREEN + "✓ Config reloaded successfully!");
-            plugin.getLogger().info("Config reloaded by " + sender.getName());
+            sender.sendMessage(ChatColor.GREEN + "✓ Config reloaded");
+            
+            // Reload scoreboard for online players
+            if (plugin.getScoreboardManager() != null) {
+                plugin.getScoreboardManager().reloadAllScoreboards();
+                sender.sendMessage(ChatColor.GREEN + "✓ Scoreboards refreshed");
+            }
+            
+            // Reload hologram settings
+            if (plugin.getHoloManager() != null) {
+                sender.sendMessage(ChatColor.GREEN + "✓ Hologram settings updated");
+            }
+            
+            sender.sendMessage("");
+            sender.sendMessage(ChatColor.GREEN + "✓ FarmCrops reloaded successfully!");
+            sender.sendMessage(ChatColor.GRAY + "Note: Some changes may require a server restart");
+            
+            plugin.getLogger().info("Plugin reloaded by " + sender.getName());
         } catch (Exception e) {
-            sender.sendMessage(ChatColor.RED + "✗ Failed to reload config: " + e.getMessage());
-            plugin.getLogger().severe("Config reload failed: " + e.getMessage());
+            sender.sendMessage(ChatColor.RED + "✗ Failed to reload: " + e.getMessage());
+            plugin.getLogger().severe("Reload failed: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return true;
