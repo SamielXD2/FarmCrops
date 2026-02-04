@@ -70,15 +70,14 @@ public class MainMenuGUI implements Listener {
             "",
             ChatColor.YELLOW + "Click to view"));
 
-        // Daily Tasks button (if enabled)
-        if (plugin.getDailyTaskManager() != null) {
-            gui.setItem(28, createItem(Material.CLOCK,
-                ChatColor.YELLOW + "" + ChatColor.BOLD + "📋 Daily Tasks",
-                ChatColor.GRAY + "Complete daily objectives",
-                ChatColor.GRAY + "Fresh tasks every day!",
-                "",
-                ChatColor.YELLOW + "Click to view"));
-        }
+        // Daily Tasks button
+        gui.setItem(28, createItem(
+            plugin.getDailyTaskManager() != null ? Material.CLOCK : Material.BLACK_STAINED_GLASS_PANE,
+            ChatColor.YELLOW + "" + ChatColor.BOLD + "📋 Daily Tasks",
+            ChatColor.GRAY + "Complete daily objectives",
+            ChatColor.GRAY + "Fresh tasks every day!",
+            "",
+            plugin.getDailyTaskManager() != null ? ChatColor.YELLOW + "Click to view" : ChatColor.RED + "Premium Feature"));
 
         // My Settings button
         gui.setItem(30, createItem(Material.COMPARATOR,
@@ -154,18 +153,31 @@ public class MainMenuGUI implements Listener {
                 if (plugin.getAchievementGUI() != null) {
                     plugin.getAchievementGUI().openGUI(player, 1);
                 } else {
-                    player.sendMessage(ChatColor.RED + "Achievements are not enabled!");
+                    // Show upgrade message
+                    player.sendMessage("");
+                    player.sendMessage(ChatColor.GOLD + "═══════════════════════════════");
+                    player.sendMessage(ChatColor.RED + "✗ Achievements - Premium Feature!");
+                    player.sendMessage(ChatColor.GRAY + "Unlock achievements, rewards, and titles");
+                    player.sendMessage(ChatColor.GRAY + "by upgrading to Premium Edition!");
+                    player.sendMessage(ChatColor.GOLD + "═══════════════════════════════");
+                    player.sendMessage("");
                 }
                 break;
 
             case 28: // Daily Tasks
                 player.closeInventory();
                 playerGUIs.remove(player);
-                if (plugin.getDailyTaskManager() != null) {
-                    player.sendMessage(ChatColor.YELLOW + "Daily tasks feature coming soon!");
-                    // TODO: Open daily tasks GUI
+                if (plugin.getDailyTaskGUI() != null) {
+                    plugin.getDailyTaskGUI().openDailyTasksGUI(player);
                 } else {
-                    player.sendMessage(ChatColor.RED + "Daily tasks are not enabled!");
+                    // Show upgrade message
+                    player.sendMessage("");
+                    player.sendMessage(ChatColor.GOLD + "═══════════════════════════════");
+                    player.sendMessage(ChatColor.RED + "✗ Daily Tasks - Premium Feature!");
+                    player.sendMessage(ChatColor.GRAY + "Complete daily farming objectives");
+                    player.sendMessage(ChatColor.GRAY + "by upgrading to Premium Edition!");
+                    player.sendMessage(ChatColor.GOLD + "═══════════════════════════════");
+                    player.sendMessage("");
                 }
                 break;
 
