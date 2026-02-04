@@ -13,6 +13,8 @@ import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.UUID;
+import java.util.HashSet;
+import java.util.Set;
 
 public class FarmCrops extends JavaPlugin implements Listener {
 
@@ -31,7 +33,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private ScoreboardManager scoreboardManager;
     private ActionBarManager actionBarManager;
     private MessageHandler messageHandler;
-    private ChatListener chatListener; // NEW: For title system
+    private ChatListener chatListener;
     private boolean holoEnabled = false;
     
     // Premium Features (may be null in Lite version)
@@ -46,6 +48,9 @@ public class FarmCrops extends JavaPlugin implements Listener {
     // Edition detection
     private boolean isPremiumEdition = false;
     private boolean hasPremiumClasses = false;
+    
+    // Track players who've seen welcome message (prevents spam on reload)
+    private final Set<UUID> hasSeenWelcome = new HashSet<>();
 
     @Override
     public void onEnable() {
@@ -56,7 +61,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("       FARMCROPS v" + getDescription().getVersion());
         getLogger().info("  Weight-Based Crop Economy System");
         
-        // Detect edition
+        // Detect edition BEFORE showing any edition-specific messages
         detectEdition();
         
         if (isPremiumEdition) {
@@ -105,9 +110,19 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("✓ Stats system initialized");
         getLogger().info("");
 
-        // Player Settings (v0.9.0)
+        // Player Settings
         playerSettings = new PlayerSettings(this);
         getLogger().info("✓ Player settings system initialized");
+        getLogger().info("");
+        
+        // Scoreboard Manager
+        scoreboardManager = new ScoreboardManager(this);
+        getLogger().info("✓ Scoreboard manager initialized");
+        getLogger().info("");
+        
+        // Action Bar Manager
+        actionBarManager = new ActionBarManager(this);
+        getLogger().info("✓ Action bar manager initialized");
         getLogger().info("");
 
         // Event listeners
@@ -129,58 +144,39 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("✓ Settings GUI initialized");
         getLogger().info("");
 
-        // Main Menu GUI (v0.8.0)
+        // Main Menu GUI
         mainMenuGUI = new MainMenuGUI(this);
         getServer().getPluginManager().registerEvents(mainMenuGUI, this);
         getLogger().info("✓ Main Menu GUI initialized");
         getLogger().info("");
 
-        // Stats GUI (v0.8.0)
+        // Stats GUI
         statsGUI = new StatsGUI(this);
         getServer().getPluginManager().registerEvents(statsGUI, this);
         getLogger().info("✓ Stats GUI initialized");
         getLogger().info("");
 
-        // Top GUI (v0.8.0)
+        // Top GUI
         topGUI = new TopGUI(this);
         getServer().getPluginManager().registerEvents(topGUI, this);
         getLogger().info("✓ Top GUI initialized");
         getLogger().info("");
 
-        // Player Settings GUI (v0.9.0)
+        // Player Settings GUI
         playerSettingsGUI = new PlayerSettingsGUI(this);
         getServer().getPluginManager().registerEvents(playerSettingsGUI, this);
         getLogger().info("✓ Player Settings GUI initialized");
         getLogger().info("");
         
-        // Scoreboard Manager (v1.0.0)
-        scoreboardManager = new ScoreboardManager(this);
-        getLogger().info("✓ Scoreboard manager initialized");
-        getLogger().info("");
-        
-        // Action Bar Manager (v1.0.0)
-        actionBarManager = new ActionBarManager(this);
-        getLogger().info("✓ Action bar manager initialized");
-        getLogger().info("");
-        
         // Load Premium Features (if available)
         if (isPremiumEdition && hasPremiumClasses) {
             loadPremiumFeatures();
-            
-            // Chat Listener for Title System (Premium only)
-            if (titleManager != null) {
-                chatListener = new ChatListener(this);
-                getServer().getPluginManager().registerEvents(chatListener, this);
-                getLogger().info("✓ Chat listener registered (Title system)");
-                getLogger().info("");
-            }
         } else if (isPremiumEdition && !hasPremiumClasses) {
             getLogger().warning("⚠ Premium edition detected but premium classes not found!");
             getLogger().warning("⚠ This may be a compilation issue. Premium features disabled.");
         } else {
             getLogger().info("ℹ Premium features not available in Lite edition");
             getLogger().info("ℹ To unlock: Achievements, Daily Tasks, Collections");
-            getLogger().info("ℹ Visit: [Your website/store link here]");
         }
         getLogger().info("");
 
@@ -193,70 +189,72 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getCommand("farm").setExecutor(new FarmCommand(this));
         getCommand("farmbackup").setExecutor(new BackupCommand(this));
         
-        // Premium commands (only if available)
-        if (isPremiumEdition && hasPremiumClasses) {
-            try {
-                getCommand("achievements").setExecutor(new AchievementCommand(this));
-                getCommand("dailytasks").setExecutor(new DailyTasksCommand(this));
-                getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /achievements, /dailytasks, /farmbackup");
-            } catch (Exception e) {
-                getLogger().warning("Failed to register premium commands: " + e.getMessage());
-                getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /farmbackup");
-            }
-        } else {
-            // Always register achievements command for upgrade message in Lite
-            try {
-                getCommand("achievements").setExecutor(new AchievementCommand(this));
-                getCommand("dailytasks").setExecutor(new DailyTasksCommand(this));
-            } catch (Exception e) {
-                // Commands might not be defined in plugin.yml
-            }
-            getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /farmbackup");
-        }
+        // ALWAYS register achievements and dailytasks commands (show upgrade message in Lite, open GUI in Premium)
+        getCommand("achievements").setExecutor(new AchievementCommand(this));
+        getCommand("dailytasks").setExecutor(new DailyTasksCommand(this));
+        
+        getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /achievements, /dailytasks, /farmbackup");
         getLogger().info("");
         
         // Auto-save scheduler (saves data every 5 minutes)
-        int autoSaveInterval = getConfig().getInt("auto-save.interval", 6000); // 6000 ticks = 5 minutes
-        if (getConfig().getBoolean("auto-save.enabled", true)) {
-            Bukkit.getScheduler().runTaskTimer(this, () -> {
-                if (statsManager != null) {
-                    statsManager.saveAll();
-                    getLogger().info("✓ Auto-save completed");
-                }
-            }, autoSaveInterval, autoSaveInterval);
-            getLogger().info("✓ Auto-save enabled (every 5 minutes)");
-        }
-        
-        // Placeholder hook (DecenHolograms)
-        if (Bukkit.getPluginManager().getPlugin("DecentHolograms") != null) {
-            holoEnabled = true;
-            getLogger().info("✓ DecentHolograms found!");
-            
-            try {
-                holoManager = new HoloManager(this);
-                cropPreviewManager = new CropPreviewManager(this);
-                Bukkit.getPluginManager().registerEvents(cropPreviewManager, this);
-                getLogger().info("✓ Hologram features enabled");
-            } catch (Exception e) {
-                getLogger().warning("Failed to initialize hologram features: " + e.getMessage());
-                holoEnabled = false;
+        int autoSaveInterval = getConfig().getInt("auto-save-interval", 6000); // 6000 ticks = 5 minutes
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            if (statsManager != null) {
+                statsManager.saveAll();
             }
+            if (playerSettings != null) {
+                playerSettings.saveSettings();
+            }
+            getLogger().info("Auto-save completed (stats, settings)");
+        }, autoSaveInterval, autoSaveInterval);
+        getLogger().info("✓ Auto-save enabled (every " + (autoSaveInterval / 1200) + " minutes)");
+        getLogger().info("");
+
+        // PlaceholderAPI support temporarily disabled
+        getLogger().info("  PlaceholderAPI integration: Disabled");
+        getLogger().info("");
+
+        // DecentHolograms
+        if (Bukkit.getPluginManager().getPlugin("DecentHolograms") != null) {
+            cropPreviewManager = new CropPreviewManager(this);
+            holoManager = new HoloManager(this);
+            Bukkit.getPluginManager().registerEvents(cropPreviewManager, this);
+            holoEnabled = true;
+            getLogger().info("✓ DecentHolograms integration active");
+            getLogger().info("  - Right-click preview: " + getConfig().getBoolean("holograms.right-click-preview"));
+            getLogger().info("  - Preview duration: " + getConfig().getInt("holograms.preview-duration") + "s");
         } else {
-            getLogger().info("ℹ DecentHolograms not found - Preview/hologram features disabled");
+            getLogger().info("  DecentHolograms not found — hologram support disabled");
         }
         getLogger().info("");
 
+        // Permissions info
+        getLogger().info("✓ Permissions configured (LuckPerms compatible)");
+        getLogger().info("  - farmcrops.harvest  — allow/deny custom crop drops");
+        getLogger().info("  - farmcrops.sell     — open sell GUI");
+        getLogger().info("  - farmcrops.stats    — view own stats");
+        getLogger().info("  - farmcrops.stats.others — view others' stats");
+        getLogger().info("  - farmcrops.top      — view leaderboard");
+        getLogger().info("  - farmcrops.settings — admin settings GUI");
+        getLogger().info("  - farmcrops.reload   — reload config");
+        getLogger().info("  - farmcrops.menu     — main menu GUI");
+        getLogger().info("  - farmcrops.admin    — grants all above");
+        getLogger().info("  - farmcrops.autosell.use — auto-sell on harvest");
+        getLogger().info("  - farmcrops.preview  — right-click crop preview");
+        getLogger().info("");
+
         getLogger().info("========================================");
-        getLogger().info("   /// FARMCROPS v" + getDescription().getVersion() + " ENABLED ///");
-        getLogger().info("  Edition: " + (isPremiumEdition ? "Premium ⭐" : "Lite 💎"));
+        getLogger().info("  ✓✓✓ FARMCROPS v" + getDescription().getVersion() + " ENABLED ✓✓✓");
+        getLogger().info("  Edition: " + (isPremiumEdition ? "Premium" : "Lite"));
         getLogger().info("========================================");
     }
 
     /**
      * Detect if this is Premium or Lite edition
+     * FIXED: Always detect fresh on startup, don't rely on saved config
      */
     private void detectEdition() {
-        // Detect edition by checking if premium classes are available
+        // Check if premium classes exist in the JAR
         try {
             Class.forName("player.farmcrops.AchievementManager");
             Class.forName("player.farmcrops.DailyTaskManager");
@@ -270,13 +268,13 @@ public class FarmCrops extends JavaPlugin implements Listener {
             getLogger().info("[Edition Detection] Premium classes not found - LITE EDITION");
         }
         
-        // DO NOT save to config - let Maven variables handle it
+        // NEVER save edition to config - always detect fresh each startup
         getLogger().info("[Edition Detection] Running as: " + (isPremiumEdition ? "PREMIUM" : "LITE") + 
                          " Edition v" + getDescription().getVersion());
     }
 
     /**
-     * Load premium features
+     * Load premium features (Achievements, Daily Tasks, Collections)
      */
     private void loadPremiumFeatures() {
         try {
@@ -290,8 +288,10 @@ public class FarmCrops extends JavaPlugin implements Listener {
                 achievementGUI = new AchievementGUI(this);
                 titleManager = new TitleManager(this);
                 titleGUI = new TitleGUI(this);
+                chatListener = new ChatListener(this);
                 getServer().getPluginManager().registerEvents(achievementGUI, this);
                 getServer().getPluginManager().registerEvents(titleGUI, this);
+                getServer().getPluginManager().registerEvents(chatListener, this);
                 getLogger().info("✓ Achievement System enabled");
                 getLogger().info("✓ Title System enabled");
             } else {
@@ -304,7 +304,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
                 dailyTaskGUI = new DailyTaskGUI(this);
                 getServer().getPluginManager().registerEvents(dailyTaskGUI, this);
                 getLogger().info("✓ Daily Tasks enabled");
-                getLogger().info("✓ Daily Tasks GUI registered");
+                getLogger().info("✓ Daily Tasks GUI enabled");
             } else {
                 getLogger().info("✗ Daily Tasks disabled in config");
             }
@@ -328,8 +328,75 @@ public class FarmCrops extends JavaPlugin implements Listener {
         }
     }
 
+    /**
+     * NEW: Welcome message on player join
+     */
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        
+        // Only show welcome message once per session (prevents spam on reload)
+        if (hasSeenWelcome.contains(uuid)) {
+            return;
+        }
+        
+        hasSeenWelcome.add(uuid);
+        
+        // Delay by 2 seconds so it doesn't get lost in join spam
+        Bukkit.getScheduler().runTaskLater(this, () -> {
+            if (player.isOnline()) {
+                sendWelcomeMessage(player);
+            }
+        }, 40L); // 40 ticks = 2 seconds
+    }
+
+    /**
+     * NEW: Send edition-specific welcome message
+     */
+    private void sendWelcomeMessage(Player player) {
+        player.sendMessage("");
+        player.sendMessage(ChatColor.GREEN + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        
+        if (isPremiumEdition) {
+            // Premium welcome message
+            player.sendMessage(ChatColor.GOLD + "" + ChatColor.BOLD + "    ⭐ FARMCROPS PREMIUM ⭐");
+            player.sendMessage("");
+            player.sendMessage(ChatColor.YELLOW + "Thank you for purchasing Premium Edition!");
+            player.sendMessage(ChatColor.GRAY + "You have access to all features:");
+            player.sendMessage(ChatColor.GREEN + "  ✓ Achievements & Custom Titles");
+            player.sendMessage(ChatColor.GREEN + "  ✓ Daily Tasks & Challenges");
+            player.sendMessage(ChatColor.GREEN + "  ✓ Crop Collections");
+            player.sendMessage(ChatColor.GREEN + "  ✓ Advanced Stats & Leaderboards");
+            player.sendMessage("");
+            player.sendMessage(ChatColor.AQUA + "Type " + ChatColor.WHITE + "/farm" + ChatColor.AQUA + " to get started!");
+        } else {
+            // Lite welcome message
+            player.sendMessage(ChatColor.AQUA + "" + ChatColor.BOLD + "    💎 FARMCROPS LITE 💎");
+            player.sendMessage("");
+            player.sendMessage(ChatColor.YELLOW + "Welcome to FarmCrops Lite Edition!");
+            player.sendMessage(ChatColor.GRAY + "You're using the free version with:");
+            player.sendMessage(ChatColor.GREEN + "  ✓ Custom Crop System");
+            player.sendMessage(ChatColor.GREEN + "  ✓ Sell GUI & Stats");
+            player.sendMessage(ChatColor.GREEN + "  ✓ Holograms & Effects");
+            player.sendMessage("");
+            player.sendMessage(ChatColor.GOLD + "Want more? Upgrade to Premium for:");
+            player.sendMessage(ChatColor.YELLOW + "  ⭐ Achievements & Titles");
+            player.sendMessage(ChatColor.YELLOW + "  ⭐ Daily Tasks");
+            player.sendMessage(ChatColor.YELLOW + "  ⭐ Collections");
+            player.sendMessage("");
+            player.sendMessage(ChatColor.AQUA + "Type " + ChatColor.WHITE + "/farm" + ChatColor.AQUA + " to get started!");
+        }
+        
+        player.sendMessage(ChatColor.GREEN + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        player.sendMessage("");
+    }
+
     @Override
     public void onDisable() {
+        // Clear welcome tracking
+        hasSeenWelcome.clear();
+        
         // Save all player data
         getLogger().info("Saving all player data...");
         
@@ -341,12 +408,6 @@ public class FarmCrops extends JavaPlugin implements Listener {
         if (playerSettings != null) {
             playerSettings.saveSettings();
             getLogger().info("✓ Player settings saved");
-        }
-        
-        // Cleanup new managers
-        if (scoreboardManager != null) {
-            scoreboardManager.shutdown();
-            getLogger().info("✓ Scoreboard manager shutdown");
         }
         
         // Save premium features (if they exist)
@@ -371,28 +432,23 @@ public class FarmCrops extends JavaPlugin implements Listener {
 
     /**
      * Clear stats cache when a player leaves to prevent memory leaks.
-     * Also saves their data immediately to prevent data loss.
      */
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         UUID uuid = event.getPlayer().getUniqueId();
         
+        // Remove from welcome tracking
+        hasSeenWelcome.remove(uuid);
+        
         // Save player data immediately before clearing cache
         if (statsManager != null) {
             StatsManager.PlayerStats stats = statsManager.getStats(uuid);
-            // Data is auto-saved by StatsManager, just clear cache
             statsManager.clearCache(uuid);
         }
         
         if (playerSettings != null) {
-            // Save before clearing cache
             playerSettings.saveSettings();
             playerSettings.clearCache(uuid);
-        }
-        
-        // Cleanup scoreboard
-        if (scoreboardManager != null) {
-            scoreboardManager.clearPlayer(uuid);
         }
         
         if (holoEnabled && cropPreviewManager != null) {
@@ -401,43 +457,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     }
 
     /**
-     * Initialize features when player joins
-     */
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
-        
-        // Notify OPs about lite edition
-        if (!isPremiumEdition && player.isOp()) {
-            Bukkit.getScheduler().runTaskLater(this, () -> {
-                player.sendMessage("");
-                player.sendMessage(ChatColor.GOLD + "═══════════════════════════════════");
-                player.sendMessage(ChatColor.YELLOW + "ℹ " + ChatColor.GRAY + "FarmCrops " + ChatColor.YELLOW + "LITE Edition");
-                player.sendMessage(ChatColor.GRAY + "You're running the free version");
-                player.sendMessage("");
-                player.sendMessage(ChatColor.GRAY + "Upgrade to " + ChatColor.GOLD + "PREMIUM" + ChatColor.GRAY + " to unlock:");
-                player.sendMessage(ChatColor.YELLOW + "  • " + ChatColor.WHITE + "Achievements System");
-                player.sendMessage(ChatColor.YELLOW + "  • " + ChatColor.WHITE + "Daily Tasks & Rewards");
-                player.sendMessage(ChatColor.YELLOW + "  • " + ChatColor.WHITE + "Collections Tracking");
-                player.sendMessage(ChatColor.YELLOW + "  • " + ChatColor.WHITE + "Custom Titles");
-                player.sendMessage(ChatColor.GOLD + "═══════════════════════════════════");
-                player.sendMessage("");
-            }, 60L); // 3 seconds after join
-        }
-        
-        // Initialize scoreboard if enabled
-        if (scoreboardManager != null) {
-            // Check if player has scoreboard enabled in their settings  
-            PlayerSettings.PlayerPreferences prefs = playerSettings.getPreferences(uuid);
-            if (prefs.showScoreboard) {
-                scoreboardManager.showScoreboard(player);
-            }
-        }
-    }
-
-    /**
-     * Get the base price for a crop type (delegates to CropListener logic).
+     * Get the base price for a crop type
      */
     public double getCropPrice(Material cropType) {
         String cropKey = null;
