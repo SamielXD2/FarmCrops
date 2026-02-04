@@ -390,15 +390,19 @@ public class CropListener implements Listener {
     private String rollTier() {
         int roll = ThreadLocalRandom.current().nextInt(1, 101);
         int common = plugin.getConfig().getInt("tiers.common.chance", 70);
-        int rare   = plugin.getConfig().getInt("tiers.rare.chance", 19);
-        int epic   = plugin.getConfig().getInt("tiers.epic.chance", 7);
-        int legendary = plugin.getConfig().getInt("tiers.legendary.chance", 3);
+        int uncommon = plugin.getConfig().getInt("tiers.uncommon.chance", 10);
+        int rare   = plugin.getConfig().getInt("tiers.rare.chance", 12);
+        int epic   = plugin.getConfig().getInt("tiers.epic.chance", 6);
+        int legendary = plugin.getConfig().getInt("tiers.legendary.chance", 2);
+        int mythic = plugin.getConfig().getInt("tiers.mythic.chance", 0);
 
-        if (roll <= common)                                        return "common";
-        else if (roll <= common + rare)                            return "rare";
-        else if (roll <= common + rare + epic)                     return "epic";
-        else if (roll <= common + rare + epic + legendary)         return "legendary";
-        else                                                       return "mythic";
+        if (roll <= common)                                                           return "common";
+        else if (roll <= common + uncommon)                                           return "uncommon";
+        else if (roll <= common + uncommon + rare)                                     return "rare";
+        else if (roll <= common + uncommon + rare + epic)                              return "epic";
+        else if (roll <= common + uncommon + rare + epic + legendary)                  return "legendary";
+        else if (roll <= common + uncommon + rare + epic + legendary + mythic)         return "mythic";
+        else                                                                           return "common"; // Fallback
     }
 
     private boolean isTrackedCrop(Material m) {
