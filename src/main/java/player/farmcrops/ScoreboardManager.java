@@ -222,4 +222,18 @@ public class ScoreboardManager {
         sessionCrops.clear();
         sessionEarnings.clear();
     }
+    
+    /**
+     * Reload scoreboards for all online players
+     */
+    public void reloadAllScoreboards() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings().getPreferences(player.getUniqueId());
+            if (prefs.showScoreboard && playerBoards.containsKey(player.getUniqueId())) {
+                // Refresh existing scoreboard
+                hideScoreboard(player);
+                showScoreboard(player);
+            }
+        }
+    }
 }
