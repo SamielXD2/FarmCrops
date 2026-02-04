@@ -67,3 +67,4 @@ jobs:
           name: FarmCrops-Lite
           path: target/FarmCrops-Lite-*.jar
           retention-days: 30
+
