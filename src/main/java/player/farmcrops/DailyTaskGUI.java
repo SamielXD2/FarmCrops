@@ -13,6 +13,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Daily Tasks GUI (Premium Feature)
@@ -51,44 +52,63 @@ public class DailyTaskGUI implements Listener {
             return;
         }
         
-        DailyTaskManager.DailyTasks tasks = taskManager.getTasks(player.getUniqueId());
+        UUID uuid = player.getUniqueId();
         
         // Header decoration
         fillBorders(gui);
         
-        // Daily Tasks
+        // Get stats for dynamic task progress
+        StatsManager.PlayerStats stats = plugin.getStatsManager().getStats(uuid);
+        
+        // Daily Tasks with actual progress from DailyTaskManager
         addTaskItem(gui, 10, Material.WHEAT, "Harvest Wheat",
-            tasks.wheatHarvested, tasks.wheatTarget,
-            "Harvest wheat crops", 100, "experience");
+            taskManager.getTaskProgress(uuid, "harvest_wheat"),
+            plugin.getConfig().getInt("daily-tasks.tasks.harvest_wheat.requirement", 50),
+            "Harvest wheat crops", 100, "experience",
+            taskManager.isTaskCompleted(uuid, "harvest_wheat"));
         
         addTaskItem(gui, 11, Material.CARROT, "Harvest Carrots",
-            tasks.carrotHarvested, tasks.carrotTarget,
-            "Harvest carrot crops", 100, "experience");
+            taskManager.getTaskProgress(uuid, "harvest_carrot"),
+            plugin.getConfig().getInt("daily-tasks.tasks.harvest_carrot.requirement", 50),
+            "Harvest carrot crops", 100, "experience",
+            taskManager.isTaskCompleted(uuid, "harvest_carrot"));
         
         addTaskItem(gui, 12, Material.POTATO, "Harvest Potatoes",
-            tasks.potatoHarvested, tasks.potatoTarget,
-            "Harvest potato crops", 100, "experience");
+            taskManager.getTaskProgress(uuid, "harvest_potato"),
+            plugin.getConfig().getInt("daily-tasks.tasks.harvest_potato.requirement", 50),
+            "Harvest potato crops", 100, "experience",
+            taskManager.isTaskCompleted(uuid, "harvest_potato"));
         
         addTaskItem(gui, 13, Material.BEETROOT, "Harvest Beetroots",
-            tasks.beetrootHarvested, tasks.beetrootTarget,
-            "Harvest beetroot crops", 100, "experience");
+            taskManager.getTaskProgress(uuid, "harvest_beetroot"),
+            plugin.getConfig().getInt("daily-tasks.tasks.harvest_beetroot.requirement", 50),
+            "Harvest beetroot crops", 100, "experience",
+            taskManager.isTaskCompleted(uuid, "harvest_beetroot"));
         
         addTaskItem(gui, 14, Material.MELON, "Harvest Melons",
-            tasks.melonHarvested, tasks.melonTarget,
-            "Harvest melon blocks", 100, "experience");
+            taskManager.getTaskProgress(uuid, "harvest_melon"),
+            plugin.getConfig().getInt("daily-tasks.tasks.harvest_melon.requirement", 30),
+            "Harvest melon blocks", 100, "experience",
+            taskManager.isTaskCompleted(uuid, "harvest_melon"));
         
-        // Tier-based tasks
+        // Tier-based tasks (using actual stats)
         addTaskItem(gui, 19, Material.EMERALD, "Harvest Legendary Crops",
-            tasks.legendaryHarvested, tasks.legendaryTarget,
-            "Harvest legendary tier crops", 250, "experience");
+            stats.legendaryHarvests,
+            plugin.getConfig().getInt("daily-tasks.legendary-target", 10),
+            "Harvest legendary tier crops", 250, "experience",
+            stats.legendaryHarvests >= plugin.getConfig().getInt("daily-tasks.legendary-target", 10));
         
         addTaskItem(gui, 20, Material.DIAMOND, "Earn Money",
-            (int)tasks.moneyEarned, (int)tasks.moneyTarget,
-            "Earn money from farming", 500, "money");
+            (int)stats.totalEarnings,
+            plugin.getConfig().getInt("daily-tasks.money-target", 1000),
+            "Earn money from farming", 500, "money",
+            stats.totalEarnings >= plugin.getConfig().getInt("daily-tasks.money-target", 1000));
         
         addTaskItem(gui, 21, Material.GOLD_INGOT, "Total Harvests",
-            tasks.totalHarvested, tasks.totalTarget,
-            "Harvest any crops", 150, "experience");
+            stats.totalHarvests,
+            plugin.getConfig().getInt("daily-tasks.harvest-target", 100),
+            "Harvest any crops", 150, "experience",
+            stats.totalHarvests >= plugin.getConfig().getInt("daily-tasks.harvest-target", 100));
         
         // Info item
         ItemStack infoItem = createItem(Material.BOOK,
@@ -121,8 +141,8 @@ public class DailyTaskGUI implements Listener {
      * Add a task item to the GUI
      */
     private void addTaskItem(Inventory gui, int slot, Material material, String taskName,
-                             int progress, int target, String description, int reward, String rewardType) {
-        boolean completed = progress >= target;
+                             int progress, int target, String description, int reward, 
+                             String rewardType, boolean completed) {
         
         List<String> lore = new ArrayList<>();
         lore.add("");
