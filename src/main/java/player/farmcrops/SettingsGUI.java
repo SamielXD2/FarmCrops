@@ -38,6 +38,10 @@ public class SettingsGUI implements Listener {
         { "holograms.growing-cursor", "Growing Cursor",    "Hologram when looking at crops" },
         { "holograms.particles",      "Particles",         "Particle effects on harvest" },
         { "seeds.enabled",            "Seed Drops",        "Drop seeds when harvesting" },
+        { "auto-save.enabled",        "Auto-Save",         "Automatic data saving" },
+        { "scoreboard.enabled",       "Scoreboard",        "Enable scoreboard system" },
+        { "action-bar.enabled",       "Action Bar",        "Show action bar messages" },
+        { "chat-messages.enabled",    "Chat Messages",     "Harvest messages in chat" },
     };
 
     public SettingsGUI(FarmCrops plugin) {
@@ -45,17 +49,18 @@ public class SettingsGUI implements Listener {
     }
 
     public void openGUI(Player player) {
-        Inventory gui = Bukkit.createInventory(null, 27, ChatColor.DARK_GREEN + "FarmCrops Settings");
+        Inventory gui = Bukkit.createInventory(null, 45, ChatColor.DARK_GREEN + "FarmCrops Settings");
 
         // Fill with glass
         ItemStack glass = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta gm = glass.getItemMeta();
         if (gm != null) { gm.setDisplayName(" "); glass.setItemMeta(gm); }
-        for (int i = 0; i < 27; i++) gui.setItem(i, glass);
+        for (int i = 0; i < 45; i++) gui.setItem(i, glass);
 
-        // Place toggle buttons
-        for (int i = 0; i < TOGGLES.length; i++) {
-            gui.setItem(i, buildToggleItem(TOGGLES[i][0], TOGGLES[i][1], TOGGLES[i][2]));
+        // Place toggle buttons in a nice grid layout
+        int[] slots = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
+        for (int i = 0; i < TOGGLES.length && i < slots.length; i++) {
+            gui.setItem(slots[i], buildToggleItem(TOGGLES[i][0], TOGGLES[i][1], TOGGLES[i][2]));
         }
 
         // Info button
@@ -67,12 +72,30 @@ public class SettingsGUI implements Listener {
             lore.add(ChatColor.GRAY + "These settings are GLOBAL");
             lore.add(ChatColor.GRAY + "Changes affect ALL players");
             lore.add("");
-            lore.add(ChatColor.GREEN + "✓ Admins can toggle features");
+            lore.add(ChatColor.GREEN + "✓ Toggle features on/off");
             lore.add(ChatColor.GRAY + "without editing config.yml");
+            lore.add("");
+            lore.add(ChatColor.YELLOW + "Use /farmreload to");
+            lore.add(ChatColor.YELLOW + "apply other config changes");
             im.setLore(lore);
             infoBtn.setItemMeta(im);
         }
         gui.setItem(4, infoBtn);
+        
+        // Reload button
+        ItemStack reloadBtn = new ItemStack(Material.RECOVERY_COMPASS);
+        ItemMeta rm = reloadBtn.getItemMeta();
+        if (rm != null) {
+            rm.setDisplayName(ChatColor.AQUA + "" + ChatColor.BOLD + "RELOAD");
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + "Reload plugin configuration");
+            lore.add(ChatColor.GRAY + "and refresh all systems");
+            lore.add("");
+            lore.add(ChatColor.YELLOW + "Click to reload");
+            rm.setLore(lore);
+            reloadBtn.setItemMeta(rm);
+        }
+        gui.setItem(40, reloadBtn);
 
         // Close button
         ItemStack closeBtn = new ItemStack(Material.BARRIER);
@@ -81,7 +104,7 @@ public class SettingsGUI implements Listener {
             cm.setDisplayName(ChatColor.RED + "" + ChatColor.BOLD + "CLOSE");
             closeBtn.setItemMeta(cm);
         }
-        gui.setItem(8, closeBtn);
+        gui.setItem(44, closeBtn);
 
         playerGUIs.put(player, gui);
         player.openInventory(gui);
@@ -123,7 +146,7 @@ public class SettingsGUI implements Listener {
         int slot = event.getSlot();
 
         // Close button
-        if (slot == 8) {
+        if (slot == 44) {
             player.closeInventory();
             playerGUIs.remove(player);
             return;
@@ -133,25 +156,37 @@ public class SettingsGUI implements Listener {
         if (slot == 4) {
             return;
         }
+        
+        // Reload button
+        if (slot == 40) {
+            player.closeInventory();
+            playerGUIs.remove(player);
+            player.performCommand("farmreload");
+            return;
+        }
 
-        // Toggle buttons (slots 0 to TOGGLES.length-1)
-        if (slot >= 0 && slot < TOGGLES.length) {
-            String configPath = TOGGLES[slot][0];
-            boolean current = plugin.getConfig().getBoolean(configPath, true);
-            boolean newValue = !current;
+        // Toggle buttons
+        int[] slots = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};
+        for (int i = 0; i < slots.length && i < TOGGLES.length; i++) {
+            if (slot == slots[i]) {
+                String configPath = TOGGLES[i][0];
+                boolean current = plugin.getConfig().getBoolean(configPath, true);
+                boolean newValue = !current;
 
-            // Update in-memory config
-            plugin.getConfig().set(configPath, newValue);
+                // Update in-memory config
+                plugin.getConfig().set(configPath, newValue);
 
-            // Save config to disk
-            plugin.saveConfig();
+                // Save config to disk
+                plugin.saveConfig();
 
-            // Refresh the button
-            gui.setItem(slot, buildToggleItem(TOGGLES[slot][0], TOGGLES[slot][1], TOGGLES[slot][2]));
+                // Refresh the button
+                gui.setItem(slot, buildToggleItem(TOGGLES[i][0], TOGGLES[i][1], TOGGLES[i][2]));
 
-            player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
-            player.sendMessage(ChatColor.GREEN + TOGGLES[slot][1] + " → " + (newValue ? ChatColor.GREEN + "ON" : ChatColor.RED + "OFF"));
-            player.sendMessage(ChatColor.GRAY + "(Changed globally for all players)");
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
+                player.sendMessage(ChatColor.GREEN + TOGGLES[i][1] + " → " + (newValue ? ChatColor.GREEN + "ON" : ChatColor.RED + "OFF"));
+                player.sendMessage(ChatColor.GRAY + "(Changed globally for all players)");
+                break;
+            }
         }
     }
 }
