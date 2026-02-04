@@ -76,13 +76,13 @@ tiers:
     multiplier: 2.0
     color: "&d"
   legendary:
+    chance: 2
+    multiplier: 3.0
+    color: "&6"
   mythic:
     chance: 0
     multiplier: 5.0
     color: "&c"
-    chance: 2
-    multiplier: 3.0
-    color: "&6"
 
 # Crop Prices (base price per kg)
 prices:
