@@ -25,6 +25,9 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private PlayerSettings playerSettings;
     private PlayerSettingsGUI playerSettingsGUI;
     private CropPreviewManager cropPreviewManager;
+    private ScoreboardManager scoreboardManager;
+    private ActionBarManager actionBarManager;
+    private MessageHandler messageHandler;
     private boolean holoEnabled = false;
     
     // Premium Features (may be null in Lite version)
@@ -34,6 +37,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private AchievementGUI achievementGUI;
     private TitleManager titleManager;
     private TitleGUI titleGUI;
+    private DailyTaskGUI dailyTaskGUI;
     
     // Edition detection
     private boolean isPremiumEdition = false;
@@ -71,6 +75,11 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("  - Weight: " + getConfig().getDouble("weight.min") + " – " + getConfig().getDouble("weight.max") + " kg");
         getLogger().info("  - Per-crop pricing enabled");
         getLogger().info("  - Seeds: " + (getConfig().getBoolean("seeds.enabled") ? "Enabled" : "Disabled"));
+        getLogger().info("");
+        
+        // Initialize Message Handler
+        messageHandler = new MessageHandler(this);
+        getLogger().info("✓ Message handler initialized");
         getLogger().info("");
 
         // Vault
@@ -140,6 +149,16 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("✓ Player Settings GUI initialized");
         getLogger().info("");
         
+        // Scoreboard Manager (v1.0.0)
+        scoreboardManager = new ScoreboardManager(this);
+        getLogger().info("✓ Scoreboard manager initialized");
+        getLogger().info("");
+        
+        // Action Bar Manager (v1.0.0)
+        actionBarManager = new ActionBarManager(this);
+        getLogger().info("✓ Action bar manager initialized");
+        getLogger().info("");
+        
         // Load Premium Features (if available)
         if (isPremiumEdition && hasPremiumClasses) {
             loadPremiumFeatures();
@@ -166,11 +185,20 @@ public class FarmCrops extends JavaPlugin implements Listener {
         if (isPremiumEdition && hasPremiumClasses) {
             try {
                 getCommand("achievements").setExecutor(new AchievementCommand(this));
-                getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /achievements, /farmbackup");
+                getCommand("dailytasks").setExecutor(new DailyTasksCommand(this));
+                getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /achievements, /dailytasks, /farmbackup");
             } catch (Exception e) {
+                getLogger().warning("Failed to register premium commands: " + e.getMessage());
                 getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /farmbackup");
             }
         } else {
+            // Always register achievements command for upgrade message in Lite
+            try {
+                getCommand("achievements").setExecutor(new AchievementCommand(this));
+                getCommand("dailytasks").setExecutor(new DailyTasksCommand(this));
+            } catch (Exception e) {
+                // Commands might not be defined in plugin.yml
+            }
             getLogger().info("✓ Commands registered: /sellcrops, /farmstats, /farmtop, /farmsettings, /farmreload, /farm, /farmbackup");
         }
         getLogger().info("");
@@ -281,7 +309,10 @@ public class FarmCrops extends JavaPlugin implements Listener {
             // Daily Tasks
             if (getConfig().getBoolean("daily-tasks.enabled", true)) {
                 dailyTaskManager = new DailyTaskManager(this);
+                dailyTaskGUI = new DailyTaskGUI(this);
+                getServer().getPluginManager().registerEvents(dailyTaskGUI, this);
                 getLogger().info("✓ Daily Tasks enabled");
+                getLogger().info("✓ Daily Tasks GUI registered");
             } else {
                 getLogger().info("✗ Daily Tasks disabled in config");
             }
@@ -318,6 +349,12 @@ public class FarmCrops extends JavaPlugin implements Listener {
         if (playerSettings != null) {
             playerSettings.saveSettings();
             getLogger().info("✓ Player settings saved");
+        }
+        
+        // Cleanup new managers
+        if (scoreboardManager != null) {
+            scoreboardManager.shutdown();
+            getLogger().info("✓ Scoreboard manager shutdown");
         }
         
         // Save premium features (if they exist)
@@ -359,6 +396,11 @@ public class FarmCrops extends JavaPlugin implements Listener {
             // Save before clearing cache
             playerSettings.saveSettings();
             playerSettings.clearCache(uuid);
+        }
+        
+        // Cleanup scoreboard
+        if (scoreboardManager != null) {
+            scoreboardManager.clearPlayer(uuid);
         }
         
         if (holoEnabled && cropPreviewManager != null) {
@@ -415,6 +457,9 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public PlayerSettingsGUI getPlayerSettingsGUI() { return playerSettingsGUI; }
     public CropPreviewManager getCropPreviewManager() { return cropPreviewManager; }
     public HoloManager getHoloManager()        { return holoManager; }
+    public ScoreboardManager getScoreboardManager() { return scoreboardManager; }
+    public ActionBarManager getActionBarManager() { return actionBarManager; }
+    public MessageHandler getMessageHandler()  { return messageHandler; }
     
     // Edition info
     public boolean isPremiumEdition()          { return isPremiumEdition; }
@@ -427,4 +472,5 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public CollectionManager getCollectionManager() { return collectionManager; }
     public TitleManager getTitleManager() { return titleManager; }
     public TitleGUI getTitleGUI() { return titleGUI; }
+    public DailyTaskGUI getDailyTaskGUI() { return dailyTaskGUI; }
 }

@@ -58,9 +58,16 @@ public class CropListener implements Listener {
         // MELON HANDLING (Special case - melons are blocks, not Ageable!)
         // ========================================
         if (block.getType() == Material.MELON) {
-            // Melons don't have age - they're just blocks that spawn from stems
-            // Process them directly
-            processCropHarvest(player, block, event);
+            try {
+                // Melons don't have age - they're just blocks that spawn from stems
+                // Process them directly
+                processCropHarvest(player, block, event);
+            } catch (Exception e) {
+                plugin.getLogger().severe("Error processing melon harvest for " + player.getName() + ": " + e.getMessage());
+                player.sendMessage(ChatColor.RED + "✗ Error harvesting melon!");
+                player.sendMessage(ChatColor.GRAY + "Make sure you have the 'farmcrops.harvest' permission.");
+                e.printStackTrace();
+            }
             return;
         }
 
@@ -80,124 +87,199 @@ public class CropListener implements Listener {
      * Process the harvest for any tracked crop (including melons!)
      */
     private void processCropHarvest(Player player, Block block, BlockBreakEvent event) {
-        // Get player preferences
-        PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings()
-            .getPreferences(player.getUniqueId());
+        try {
+            // Get player preferences
+            PlayerSettings.PlayerPreferences prefs = plugin.getPlayerSettings()
+                .getPreferences(player.getUniqueId());
 
-        // ========================================
-        // CROP STATS CALCULATION
-        // ========================================
-        String tier;
-        double weight;
-        double price;
+            // ========================================
+            // CROP STATS CALCULATION
+            // ========================================
+            String tier;
+            double weight;
+            double price;
 
-        // Roll fresh stats for this crop
-        tier  = rollTier();
+            // Roll fresh stats for this crop
+            tier  = rollTier();
 
-        double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
-        double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
-        weight = ThreadLocalRandom.current().nextDouble(minWeight, maxWeight);
-        weight = Math.round(weight * 100.0) / 100.0;
+            double minWeight = plugin.getConfig().getDouble("weight.min", 0.5);
+            double maxWeight = plugin.getConfig().getDouble("weight.max", 10.0);
+            weight = ThreadLocalRandom.current().nextDouble(minWeight, maxWeight);
+            weight = Math.round(weight * 100.0) / 100.0;
 
-        double basePrice      = getCropPrice(block.getType());
-        double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
-        price  = basePrice * tierMultiplier * weight;
+            double basePrice      = getCropPrice(block.getType());
+            double tierMultiplier = plugin.getConfig().getDouble("tiers." + tier + ".multiplier", 1.0);
+            price  = basePrice * tierMultiplier * weight;
 
-        String color = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
+            String color = plugin.getConfig().getString("tiers." + tier + ".color", "&7");
 
-        // Cancel vanilla drops
-        event.setDropItems(false);
-        Location dropLoc = block.getLocation().add(0.5, 0.5, 0.5);
+            // Cancel vanilla drops
+            event.setDropItems(false);
+            Location dropLoc = block.getLocation().add(0.5, 0.5, 0.5);
 
-        // ========================================
-        // v0.9.5 NEW: AUTO-SELL WITH PERMISSION
-        // ========================================
-        if (prefs.autoSell && player.hasPermission("farmcrops.autosell.use")) {
-            // Give money directly
-            plugin.getEconomy().depositPlayer(player, price);
-            
-            // Play sound if enabled
-            if (prefs.playSounds) {
-                player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.5f);
+            // ========================================
+            // v0.9.5 NEW: AUTO-SELL WITH PERMISSION
+            // ========================================
+            if (prefs.autoSell && player.hasPermission("farmcrops.autosell.use")) {
+                try {
+                    // Give money directly
+                    plugin.getEconomy().depositPlayer(player, price);
+                    
+                    // Play sound if enabled
+                    if (prefs.playSounds) {
+                        player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.5f);
+                    }
+                    
+                    // Show message if enabled
+                    if (prefs.showHarvestMessages) {
+                        player.sendMessage(colorize(color) + "+" + weight + "kg " + formatName(block.getType()) + 
+                            ChatColor.GREEN + " → " + ChatColor.GOLD + "+$" + String.format("%.2f", price));
+                    }
+                    
+                    // NEW v1.0.0: Action Bar notification
+                    if (plugin.getActionBarManager() != null) {
+                        plugin.getActionBarManager().sendHarvestNotification(
+                            player, formatName(block.getType()), tier, weight, price
+                        );
+                    }
+                    
+                    // Record stats
+                    plugin.getStatsManager().recordHarvest(player, block.getType(), tier, weight, price);
+                    
+                    // NEW v1.0.0: Update scoreboard
+                    if (plugin.getScoreboardManager() != null) {
+                        plugin.getScoreboardManager().recordHarvest(player, price);
+                    }
+                    
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Error during auto-sell for " + player.getName() + ": " + e.getMessage());
+                    player.sendMessage(ChatColor.RED + "✗ Auto-sell failed! Check console for details.");
+                }
+                
+            } else {
+                try {
+                    // Drop item normally
+                    Material dropMat = getDropMaterial(block.getType());
+                    ItemStack item = new ItemStack(dropMat, 1);
+                    ItemMeta meta = item.getItemMeta();
+
+                    if (meta != null) {
+                        PersistentDataContainer pdc = meta.getPersistentDataContainer();
+                        pdc.set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
+                        pdc.set(TIER_KEY, PersistentDataType.STRING, tier);
+                        pdc.set(CROP_KEY, PersistentDataType.STRING, block.getType().name());
+
+                        List<String> lore = new ArrayList<>();
+                        lore.add(colorize(color) + "Tier: " + capitalize(tier));
+                        lore.add(colorize("&7Weight: &f" + weight + " kg"));
+                        lore.add(colorize("&7Price: &a$" + String.format("%.2f", price)));
+                        meta.setLore(lore);
+
+                        // Apply tier color to the ENTIRE name (tier + crop name)
+                        String fullName = capitalize(tier) + " " + formatName(block.getType());
+                        meta.setDisplayName(colorize(color) + fullName);
+                        item.setItemMeta(meta);
+                    }
+
+                    player.getWorld().dropItemNaturally(dropLoc, item);
+                    
+                    // NEW v1.0.0: Action Bar notification
+                    if (plugin.getActionBarManager() != null) {
+                        plugin.getActionBarManager().sendHarvestNotification(
+                            player, formatName(block.getType()), tier, weight, price
+                        );
+                    }
+                    
+                    // Record stats
+                    plugin.getStatsManager().recordHarvest(player, block.getType(), tier, weight, price);
+                    
+                    // NEW v1.0.0: Update scoreboard
+                    if (plugin.getScoreboardManager() != null) {
+                        plugin.getScoreboardManager().recordHarvest(player, price);
+                    }
+                    
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Error creating crop item for " + player.getName() + ": " + e.getMessage());
+                    player.sendMessage(ChatColor.RED + "✗ Failed to create crop item! Check console.");
+                }
+            }
+
+            // v1.0.0 Features - Daily Tasks, Collections, Achievements (always run regardless of autosell)
+            try {
+                if (plugin.getDailyTaskManager() != null) {
+                    plugin.getDailyTaskManager().onCropHarvest(player, block.getType());
+                }
+                
+                if (plugin.getCollectionManager() != null) {
+                    plugin.getCollectionManager().addCropToCollection(player, block.getType());
+                }
+                
+                if (plugin.getAchievementManager() != null) {
+                    plugin.getAchievementManager().checkAchievements(player);
+                }
+            } catch (Exception e) {
+                // Log but don't interrupt harvest
+                plugin.getLogger().warning("Error updating premium features: " + e.getMessage());
+            }
+
+            // Drop seeds (melons don't drop seeds)
+            if (block.getType() != Material.MELON) {
+                try {
+                    dropSeeds(block.getType(), dropLoc, player.getWorld());
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Error dropping seeds: " + e.getMessage());
+                }
+            }
+
+            // Harvest hologram flash
+            try {
+                if (prefs.showHolograms && 
+                    plugin.isHoloEnabled() && 
+                    plugin.getConfig().getBoolean("holograms.harvest-flash", true)) {
+                    
+                    plugin.getHoloManager().flashHarvest(
+                        dropLoc, player.getName(), tier, weight, price, formatName(block.getType())
+                    );
+                }
+            } catch (Exception e) {
+                // Holograms are optional, just log the error
+                plugin.getLogger().fine("Hologram error: " + e.getMessage());
+            }
+
+            // Particles (check player + server settings)
+            try {
+                if (prefs.showParticles && 
+                    plugin.getConfig().getBoolean("holograms.particles", true)) {
+                    
+                    spawnHarvestParticles(dropLoc, tier);
+                }
+            } catch (Exception e) {
+                // Particles are optional, just log the error
+                plugin.getLogger().fine("Particle error: " + e.getMessage());
             }
             
-            // Show message if enabled
-            if (prefs.showHarvestMessages) {
-                player.sendMessage(colorize(color) + "+" + weight + "kg " + formatName(block.getType()) + 
-                    ChatColor.GREEN + " → " + ChatColor.GOLD + "+$" + String.format("%.2f", price));
+            // Sound (if not auto-sell or no permission, and player has sounds enabled)
+            try {
+                if ((!prefs.autoSell || !player.hasPermission("farmcrops.autosell.use")) && prefs.playSounds) {
+                    player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f);
+                }
+            } catch (Exception e) {
+                // Sounds are optional
+                plugin.getLogger().fine("Sound error: " + e.getMessage());
             }
             
-            // Record stats
-            plugin.getStatsManager().recordHarvest(player, block.getType(), tier, weight, price);
+        } catch (Exception e) {
+            // Critical error in harvest processing
+            plugin.getLogger().severe("═══════════════════════════════════════");
+            plugin.getLogger().severe("CRITICAL ERROR in processCropHarvest!");
+            plugin.getLogger().severe("Player: " + player.getName());
+            plugin.getLogger().severe("Crop: " + block.getType());
+            plugin.getLogger().severe("Error: " + e.getMessage());
+            plugin.getLogger().severe("═══════════════════════════════════════");
+            e.printStackTrace();
             
-        } else {
-            // Drop item normally
-            Material dropMat = getDropMaterial(block.getType());
-            ItemStack item = new ItemStack(dropMat, 1);
-            ItemMeta meta = item.getItemMeta();
-
-            if (meta != null) {
-                PersistentDataContainer pdc = meta.getPersistentDataContainer();
-                pdc.set(WEIGHT_KEY, PersistentDataType.DOUBLE, weight);
-                pdc.set(TIER_KEY, PersistentDataType.STRING, tier);
-                pdc.set(CROP_KEY, PersistentDataType.STRING, block.getType().name());
-
-                List<String> lore = new ArrayList<>();
-                lore.add(colorize(color) + "Tier: " + capitalize(tier));
-                lore.add(colorize("&7Weight: &f" + weight + " kg"));
-                lore.add(colorize("&7Price: &a$" + String.format("%.2f", price)));
-                meta.setLore(lore);
-
-                // Apply tier color to the ENTIRE name (tier + crop name)
-                String fullName = capitalize(tier) + " " + formatName(block.getType());
-                meta.setDisplayName(colorize(color) + fullName);
-                item.setItemMeta(meta);
-            }
-
-            player.getWorld().dropItemNaturally(dropLoc, item);
-            
-            // Record stats
-            plugin.getStatsManager().recordHarvest(player, block.getType(), tier, weight, price);
-        }
-
-        // v1.0.0 Features - Daily Tasks, Collections, Achievements (always run regardless of autosell)
-        if (plugin.getDailyTaskManager() != null) {
-            plugin.getDailyTaskManager().onCropHarvest(player, block.getType());
-        }
-        
-        if (plugin.getCollectionManager() != null) {
-            plugin.getCollectionManager().addCropToCollection(player, block.getType());
-        }
-        
-        if (plugin.getAchievementManager() != null) {
-            plugin.getAchievementManager().checkAchievements(player);
-        }
-
-        // Drop seeds (melons don't drop seeds)
-        if (block.getType() != Material.MELON) {
-            dropSeeds(block.getType(), dropLoc, player.getWorld());
-        }
-
-        // Harvest hologram flash
-        if (prefs.showHolograms && 
-            plugin.isHoloEnabled() && 
-            plugin.getConfig().getBoolean("holograms.harvest-flash", true)) {
-            
-            plugin.getHoloManager().flashHarvest(
-                dropLoc, player.getName(), tier, weight, price, formatName(block.getType())
-            );
-        }
-
-        // Particles (check player + server settings)
-        if (prefs.showParticles && 
-            plugin.getConfig().getBoolean("holograms.particles", true)) {
-            
-            spawnHarvestParticles(dropLoc, tier);
-        }
-        
-        // Sound (if not auto-sell or no permission, and player has sounds enabled)
-        if ((!prefs.autoSell || !player.hasPermission("farmcrops.autosell.use")) && prefs.playSounds) {
-            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_PICKUP, 1.0f, 1.0f);
+            player.sendMessage(ChatColor.RED + "✗ An error occurred while harvesting!");
+            player.sendMessage(ChatColor.GRAY + "Please contact an administrator.");
         }
     }
 

@@ -350,6 +350,22 @@ public class PlayerSettingsGUI implements Listener {
                     ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
                 break;
                 
+            case 24: // Scoreboard toggle (NEW v1.0.0)
+                settings.toggleScoreboard(player);
+                // Actually show/hide the scoreboard
+                if (plugin.getScoreboardManager() != null) {
+                    plugin.getScoreboardManager().toggleScoreboard(player);
+                }
+                message = "Scoreboard: " + (settings.getPreferences(player.getUniqueId()).showScoreboard ?
+                    ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
+                break;
+                
+            case 23: // Action Bar toggle (NEW v1.0.0)
+                settings.toggleActionBar(player);
+                message = "Action Bar: " + (settings.getPreferences(player.getUniqueId()).showActionBar ?
+                    ChatColor.GREEN + "ON" : ChatColor.RED + "OFF");
+                break;
+                
             case 53: // Back (FIXED from slot 22)
                 player.closeInventory();
                 playerGUIs.remove(player);

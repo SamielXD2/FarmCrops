@@ -5,7 +5,14 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 /**
- * Centralized message handler for consistent messaging
+ * Enhanced Message Handler v2.0
+ * 
+ * Features:
+ * - Comprehensive error handling
+ * - Premium feature detection
+ * - Player-friendly error messages
+ * - Debug logging support
+ * - Exception handling utilities
  */
 public class MessageHandler {
     
@@ -130,5 +137,156 @@ public class MessageHandler {
         sender.sendMessage("");
         sender.sendMessage(ChatColor.GREEN + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         sender.sendMessage("");
+    }
+    
+    // ══════════════════════════════════════════════════════════
+    // Exception & Error Handling
+    // ══════════════════════════════════════════════════════════
+    
+    /**
+     * Handle and log an exception with user-friendly message
+     */
+    public void handleException(CommandSender sender, String action, Exception e) {
+        // Send user-friendly message
+        sender.sendMessage(colorize(prefix + "&c✗ An error occurred while " + action + "!"));
+        sender.sendMessage(colorize("&7Please contact an administrator if this persists."));
+        
+        // Log detailed error
+        plugin.getLogger().severe("═══════════════════════════════════════");
+        plugin.getLogger().severe("ERROR: Failed to " + action);
+        plugin.getLogger().severe("Player: " + (sender instanceof Player ? sender.getName() : "Console"));
+        plugin.getLogger().severe("Error Type: " + e.getClass().getSimpleName());
+        plugin.getLogger().severe("Message: " + e.getMessage());
+        plugin.getLogger().severe("═══════════════════════════════════════");
+        e.printStackTrace();
+    }
+    
+    /**
+     * Send data corruption error
+     */
+    public void sendDataError(CommandSender sender, String dataType) {
+        sender.sendMessage(colorize(prefix + "&c✗ Failed to load " + dataType + " data!"));
+        sender.sendMessage(colorize("&7Your data may be corrupted. Contact an administrator."));
+        
+        plugin.getLogger().warning("Data corruption detected for " + dataType);
+    }
+    
+    /**
+     * Send save error message
+     */
+    public void sendSaveError(CommandSender sender) {
+        sender.sendMessage(colorize(prefix + "&c✗ Failed to save data!"));
+        sender.sendMessage(colorize("&7Changes may not be saved. Please try again."));
+    }
+    
+    /**
+     * Send economy error
+     */
+    public void sendEconomyError(CommandSender sender) {
+        sender.sendMessage(colorize(prefix + "&c✗ Economy system error!"));
+        sender.sendMessage(colorize("&7Could not process transaction. Contact an administrator."));
+        
+        plugin.getLogger().warning("Economy system error - check Vault integration!");
+    }
+    
+    /**
+     * Send permission denied with specific permission
+     */
+    public void sendPermissionDenied(CommandSender sender, String permission) {
+        sender.sendMessage(colorize(prefix + "&c✗ Permission denied!"));
+        sender.sendMessage(colorize("&7Required: &f" + permission));
+    }
+    
+    /**
+     * Send feature disabled message
+     */
+    public void sendFeatureDisabled(CommandSender sender, String feature) {
+        sender.sendMessage(colorize(prefix + "&c✗ " + feature + " is currently disabled!"));
+        sender.sendMessage(colorize("&7Contact an administrator to enable it."));
+    }
+    
+    /**
+     * Send configuration error
+     */
+    public void sendConfigError(CommandSender sender, String setting) {
+        sender.sendMessage(colorize(prefix + "&c✗ Configuration error!"));
+        sender.sendMessage(colorize("&7Invalid setting: &f" + setting));
+        sender.sendMessage(colorize("&7Contact an administrator to fix the config."));
+    }
+    
+    /**
+     * Send cooldown message
+     */
+    public void sendCooldown(CommandSender sender, long secondsRemaining) {
+        sender.sendMessage(colorize(prefix + "&c✗ Please wait &f" + secondsRemaining + " seconds &cbefore doing that again!"));
+    }
+    
+    /**
+     * Send inventory full error
+     */
+    public void sendInventoryFull(Player player) {
+        player.sendMessage(colorize(prefix + "&c✗ Your inventory is full!"));
+        player.sendMessage(colorize("&7Free up some space and try again."));
+    }
+    
+    /**
+     * Send debug message (only if debug mode enabled)
+     */
+    public void sendDebug(String message) {
+        if (plugin.getConfig().getBoolean("debug-mode", false)) {
+            plugin.getLogger().info("[DEBUG] " + message);
+        }
+    }
+    
+    /**
+     * Send detailed error to console
+     */
+    public void logError(String context, Exception e) {
+        plugin.getLogger().severe("═══════════════════════════════════════");
+        plugin.getLogger().severe("ERROR in " + context);
+        plugin.getLogger().severe("Type: " + e.getClass().getName());
+        plugin.getLogger().severe("Message: " + e.getMessage());
+        plugin.getLogger().severe("Stack trace:");
+        e.printStackTrace();
+        plugin.getLogger().severe("═══════════════════════════════════════");
+    }
+    
+    /**
+     * Send warning message
+     */
+    public void sendWarning(CommandSender sender, String message) {
+        sender.sendMessage(colorize(prefix + "&e⚠ " + message));
+    }
+    
+    /**
+     * Send maintenance mode message
+     */
+    public void sendMaintenanceMode(CommandSender sender) {
+        sender.sendMessage("");
+        sender.sendMessage(colorize("&c&l⚠ MAINTENANCE MODE ⚠"));
+        sender.sendMessage(colorize("&7FarmCrops is currently undergoing maintenance."));
+        sender.sendMessage(colorize("&7Please try again later."));
+        sender.sendMessage("");
+    }
+    
+    /**
+     * Send tips/help message
+     */
+    public void sendTip(Player player, String tip) {
+        player.sendMessage(colorize(prefix + "&e💡 Tip: &7" + tip));
+    }
+    
+    /**
+     * Send generic message with prefix
+     */
+    public void sendMessage(CommandSender sender, String message) {
+        sender.sendMessage(colorize(prefix + message));
+    }
+    
+    /**
+     * Broadcast message to all players
+     */
+    public void broadcast(String message) {
+        plugin.getServer().broadcastMessage(colorize(prefix + message));
     }
 }
