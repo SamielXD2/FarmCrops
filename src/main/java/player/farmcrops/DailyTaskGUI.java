@@ -1,9 +1,11 @@
 package player.farmcrops;
 
+import org.bukkit.event.Listener;
+
 /**
  * LITE EDITION STUB - Daily Task GUI
  */
-public class DailyTaskGUI {
+public class DailyTaskGUI implements Listener {
     
     private final FarmCrops plugin;
     
