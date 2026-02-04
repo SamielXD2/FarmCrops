@@ -3,7 +3,9 @@ package player.farmcrops;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -28,6 +30,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
     private ScoreboardManager scoreboardManager;
     private ActionBarManager actionBarManager;
     private MessageHandler messageHandler;
+    private ChatListener chatListener; // NEW: For title system
     private boolean holoEnabled = false;
     
     // Premium Features (may be null in Lite version)
@@ -110,7 +113,7 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new CropListener(this), this);
         getLogger().info("✓ Crop listener registered (Wheat, Carrot, Potato, Beetroot, Melon)");
 
-        // Register this class as a listener for PlayerQuitEvent (cache cleanup)
+        // Register this class as a listener for PlayerQuitEvent and PlayerJoinEvent
         getServer().getPluginManager().registerEvents(this, this);
 
         // Sell GUI
@@ -162,6 +165,14 @@ public class FarmCrops extends JavaPlugin implements Listener {
         // Load Premium Features (if available)
         if (isPremiumEdition && hasPremiumClasses) {
             loadPremiumFeatures();
+            
+            // Chat Listener for Title System (Premium only)
+            if (titleManager != null) {
+                chatListener = new ChatListener(this);
+                getServer().getPluginManager().registerEvents(chatListener, this);
+                getLogger().info("✓ Chat listener registered (Title system)");
+                getLogger().info("");
+            }
         } else if (isPremiumEdition && !hasPremiumClasses) {
             getLogger().warning("⚠ Premium edition detected but premium classes not found!");
             getLogger().warning("⚠ This may be a compilation issue. Premium features disabled.");
@@ -204,87 +215,64 @@ public class FarmCrops extends JavaPlugin implements Listener {
         getLogger().info("");
         
         // Auto-save scheduler (saves data every 5 minutes)
-        int autoSaveInterval = getConfig().getInt("auto-save-interval", 6000); // 6000 ticks = 5 minutes
-        Bukkit.getScheduler().runTaskTimer(this, () -> {
-            if (statsManager != null) {
-                statsManager.saveAll();
-            }
-            if (playerSettings != null) {
-                playerSettings.saveSettings();
-            }
-            getLogger().info("Auto-save completed (stats, settings)");
-        }, autoSaveInterval, autoSaveInterval);
-        getLogger().info("✓ Auto-save enabled (every " + (autoSaveInterval / 1200) + " minutes)");
-        getLogger().info("");
-
-        // PlaceholderAPI support temporarily disabled
-        getLogger().info("  PlaceholderAPI integration: Disabled");
-        getLogger().info("");
-
-        // DecentHolograms
+        int autoSaveInterval = getConfig().getInt("auto-save.interval", 6000); // 6000 ticks = 5 minutes
+        if (getConfig().getBoolean("auto-save.enabled", true)) {
+            Bukkit.getScheduler().runTaskTimer(this, () -> {
+                if (statsManager != null) {
+                    statsManager.saveAll();
+                    getLogger().info("✓ Auto-save completed");
+                }
+            }, autoSaveInterval, autoSaveInterval);
+            getLogger().info("✓ Auto-save enabled (every 5 minutes)");
+        }
+        
+        // Placeholder hook (DecenHolograms)
         if (Bukkit.getPluginManager().getPlugin("DecentHolograms") != null) {
-            cropPreviewManager = new CropPreviewManager(this);
-            holoManager = new HoloManager(this);
-            Bukkit.getPluginManager().registerEvents(cropPreviewManager, this);
             holoEnabled = true;
-            getLogger().info("✓ DecentHolograms integration active");
-            getLogger().info("  - Right-click preview: " + getConfig().getBoolean("holograms.right-click-preview"));
-            getLogger().info("  - Preview duration: " + getConfig().getInt("holograms.preview-duration") + "s");
+            getLogger().info("✓ DecentHolograms found!");
+            
+            try {
+                holoManager = new HoloManager(this);
+                cropPreviewManager = new CropPreviewManager(this);
+                Bukkit.getPluginManager().registerEvents(cropPreviewManager, this);
+                getLogger().info("✓ Hologram features enabled");
+            } catch (Exception e) {
+                getLogger().warning("Failed to initialize hologram features: " + e.getMessage());
+                holoEnabled = false;
+            }
         } else {
-            getLogger().info("  DecentHolograms not found — hologram support disabled");
+            getLogger().info("ℹ DecentHolograms not found - Preview/hologram features disabled");
         }
         getLogger().info("");
 
-        // Permissions info
-        getLogger().info("✓ Permissions configured (LuckPerms compatible)");
-        getLogger().info("  - farmcrops.harvest  — allow/deny custom crop drops");
-        getLogger().info("  - farmcrops.sell     — open sell GUI");
-        getLogger().info("  - farmcrops.stats    — view own stats");
-        getLogger().info("  - farmcrops.stats.others — view others' stats");
-        getLogger().info("  - farmcrops.top      — view leaderboard");
-        getLogger().info("  - farmcrops.settings — admin settings GUI");
-        getLogger().info("  - farmcrops.reload   — reload config");
-        getLogger().info("  - farmcrops.menu     — main menu GUI");
-        getLogger().info("  - farmcrops.admin    — grants all above");
-        getLogger().info("  - farmcrops.autosell.use — auto-sell on harvest");
-        getLogger().info("  - farmcrops.preview  — right-click crop preview");
-        getLogger().info("");
-
         getLogger().info("========================================");
-        getLogger().info("  ✓✓✓ FARMCROPS v" + getDescription().getVersion() + " ENABLED ✓✓✓");
-        getLogger().info("  Edition: " + (isPremiumEdition ? "Premium" : "Lite"));
+        getLogger().info("   /// FARMCROPS v" + getDescription().getVersion() + " ENABLED ///");
+        getLogger().info("  Edition: " + (isPremiumEdition ? "Premium ⭐" : "Lite 💎"));
         getLogger().info("========================================");
     }
 
     /**
      * Detect if this is Premium or Lite edition
-     * Checks both version number and if premium classes exist
      */
     private void detectEdition() {
-        // Method 1: Check version number (1.0.0+ = Premium, 0.9.x = Lite)
-        String version = getDescription().getVersion();
-        isPremiumEdition = version.startsWith("1.0") || version.startsWith("1.1") || version.startsWith("1.2");
+        // Check config first
+        String editionType = getConfig().getString("edition.type", "Lite");
+        isPremiumEdition = editionType.equalsIgnoreCase("Premium");
         
-        // Method 2: Check if premium classes actually exist (for compile-time exclusion)
-        try {
-            Class.forName("player.farmcrops.AchievementManager");
-            Class.forName("player.farmcrops.DailyTaskManager");
-            Class.forName("player.farmcrops.CollectionManager");
-            hasPremiumClasses = true;
-        } catch (ClassNotFoundException e) {
-            hasPremiumClasses = false;
-        }
-        
-        // Override: If classes don't exist, can't be premium regardless of version
-        if (!hasPremiumClasses && isPremiumEdition) {
-            getLogger().warning("Premium version detected but classes missing - treating as Lite");
-            isPremiumEdition = false;
+        // Verify premium classes exist if Premium edition
+        if (isPremiumEdition) {
+            try {
+                // Try to load a premium-specific class
+                Class.forName("player.farmcrops.AchievementManager");
+                hasPremiumClasses = true;
+            } catch (ClassNotFoundException e) {
+                hasPremiumClasses = false;
+            }
         }
     }
 
     /**
-     * Load premium features (Achievements, Daily Tasks, Collections)
-     * Only called if isPremiumEdition && hasPremiumClasses
+     * Load premium features
      */
     private void loadPremiumFeatures() {
         try {
@@ -409,6 +397,24 @@ public class FarmCrops extends JavaPlugin implements Listener {
     }
 
     /**
+     * Initialize features when player joins
+     */
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+        
+        // Initialize scoreboard if enabled
+        if (scoreboardManager != null) {
+            // Check if player has scoreboard enabled in their settings  
+            boolean scoreboardEnabled = playerSettings.getScoreboardEnabled(uuid);
+            if (scoreboardEnabled) {
+                scoreboardManager.createScoreboard(player);
+            }
+        }
+    }
+
+    /**
      * Get the base price for a crop type (delegates to CropListener logic).
      */
     public double getCropPrice(Material cropType) {
@@ -460,17 +466,4 @@ public class FarmCrops extends JavaPlugin implements Listener {
     public ScoreboardManager getScoreboardManager() { return scoreboardManager; }
     public ActionBarManager getActionBarManager() { return actionBarManager; }
     public MessageHandler getMessageHandler()  { return messageHandler; }
-    
-    // Edition info
-    public boolean isPremiumEdition()          { return isPremiumEdition; }
-    public boolean hasPremiumFeatures()        { return isPremiumEdition && hasPremiumClasses; }
-    
-    // Premium Features (may return null in Lite version!)
-    public AchievementManager getAchievementManager() { return achievementManager; }
-    public AchievementGUI getAchievementGUI() { return achievementGUI; }
-    public DailyTaskManager getDailyTaskManager() { return dailyTaskManager; }
-    public CollectionManager getCollectionManager() { return collectionManager; }
-    public TitleManager getTitleManager() { return titleManager; }
-    public TitleGUI getTitleGUI() { return titleGUI; }
-    public DailyTaskGUI getDailyTaskGUI() { return dailyTaskGUI; }
-}
+    public ChatListener getChatListener()      { return c
